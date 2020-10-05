@@ -1,0 +1,8 @@
+type User {
+  pseudo: String
+  email: String
+}
+
+type Query {
+  users: [User]
+}
