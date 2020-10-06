@@ -6,13 +6,13 @@ docker-compose up -d
 
 export NODE_ENV=dev
 
-export DB_USERNAME="cod-wz-tourney"
-export DB_PASSWORD="cod-wz-tourney"
-export DB_NAME="cod-wz-tourney"
+export PGUSER="cod-wz-tourney"
+export PGPASSWORD="cod-wz-tourney"
+export PGDATABASE="cod-wz-tourney"
 
 # Extra override if needed
-# export DB_HOST="localhost"
-# export DB_PORT="5432"
-# export DB_SCHEMA="public"
+# export PGHOST="localhost"
+# export PGPORT="5432"
+# export PGSCHEMA="public"
 
 node index.js
