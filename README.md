@@ -47,13 +47,13 @@ Test the query:
 
 In order to directly run `node index.js` and/or override the default configuration, you need to export the following variables:
 * Required
-  * DB_USERNAME="cod-wz-tourney"
-  * DB_PASSWORD="cod-wz-tourney"
-  * DB_NAME="cod-wz-tourney"
+  * PGUSER="cod-wz-tourney"
+  * PGPASSWORD="cod-wz-tourney"
+  * PGDATABASE="cod-wz-tourney"
 * Optional
-  * DB_HOST="localhost"
-  * DB_PORT="5432"
-  * DB_SCHEMA="public"
+  * PGHOST="localhost"
+  * PGPORT="5432"
+  * PGSCHEMA="public"
 
 This let you run the API server against your own database. The defaults target the Docker instance.
 
