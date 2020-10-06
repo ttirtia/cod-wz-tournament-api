@@ -1,6 +1,29 @@
 type User {
-  pseudo: String
-  email: String
+  id: ID!
+  username: String!
+  email: String!
+  password: String!
+  is_admin: Boolean!
+}
+
+type Mutation {
+  signupUser(data: UserCreateInput!): AuthPayLoad!
+  loginUser(data: UserLoginInput!): AuthPayLoad!
+}
+
+input UserCreateInput {
+  email: String!
+  username: String!
+  password: String!
+}
+
+input UserLoginInput {
+  email: String!
+  password: String!
+}
+
+type AuthPayLoad {
+  token: String!
 }
 
 type Query {
