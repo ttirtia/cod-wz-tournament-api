@@ -37,7 +37,7 @@ Test the query:
 ```graphql
 {
   users {
-    pseudo
+    username
     email
   }
 }
