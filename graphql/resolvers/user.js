@@ -1,5 +1,10 @@
+const db = require("../../db");
+
 module.exports = {
   Query: {
-    users: () => [{ pseudo: "me", email: "me@example.com" }]
-  }
+    users: async () => {
+      const { rows } = await db.query("SELECT pseudo, email FROM users");
+      return rows;
+    },
+  },
 };

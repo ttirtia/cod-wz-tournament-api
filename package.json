@@ -24,6 +24,7 @@
     "call-of-duty-api": "^1.2.16",
     "db-migrate": "^0.11.11",
     "db-migrate-pg": "^1.2.2",
-    "graphql": "^15.3.0"
+    "graphql": "^15.3.0",
+    "pg": "^8.4.0"
   }
 }

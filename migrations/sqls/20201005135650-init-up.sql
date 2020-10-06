@@ -9,3 +9,6 @@ CREATE TABLE users (
   password  TEXT NOT NULL,
   is_admin  BOOLEAN DEFAULT false
 );
+
+-- TODO: remove test data
+INSERT INTO users(pseudo, email, password) VALUES('test_user', 'test@example.com', 'pwd');
