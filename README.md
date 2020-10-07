@@ -23,19 +23,45 @@ npm install
 2. Run the server
 
 ```bash
-./local_setup.sh
+./utils/local_setup.sh
 ```
 
-The API server will be started on port **8888** by default (can be overridden with the environment variable `SERVER_PORT`).
+The API server will be started on port **8888** by default (can be overridden with the environment variable `SERVER_PORT`, see below).
 
-3. Test the playground
+3. Create an admin user
+
+In another shell, run:
+
+```bash
+./utils/create_admin.sh
+```
+
+4. Test the playground
 
 Go to http://localhost:8888/graphql (or http://localhost:${SERVER_PORT}/graphql)
 
-Test the query:
+Login with the following mutation:
+
+```graphql
+mutation {
+  login(email: "${ADMIN_EMAIL}", password: "${ADMIN_PASSWORD}")
+}
+```
+
+Save the JWT token you get in response.
+
+Click on `HTTP HEADERS` in the lower left corner of the playground and add:
 
 ```graphql
 {
+  "Authorization": "Bearer ${JWT_TOKEN}"
+}
+```
+
+You may now run queries:
+
+```graphql
+query {
   users {
     username
     email
