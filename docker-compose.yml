@@ -7,6 +7,6 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: cod-wz-tourney
-      POSTGRES_PASSWORD: cod-wz-tourney
-      POSTGRES_DB: cod-wz-tourney
+      POSTGRES_USER: "${PGUSER:-cod-wz-tourney}"
+      POSTGRES_PASSWORD: "${PGPASSWORD:-cod-wz-tourney}"
+      POSTGRES_DB: "${PGDATABASE:-cod-wz-tourney}"
