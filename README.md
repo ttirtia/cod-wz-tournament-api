@@ -28,7 +28,7 @@ npm install
 
 The API server will be started on port **8888** by default (can be overridden with the environment variable `SERVER_PORT`).
 
-3. Test the playground (**TODO**: remove me when the app does something useful)
+3. Test the playground
 
 Go to http://localhost:8888/graphql (or http://localhost:${SERVER_PORT}/graphql)
 
@@ -45,17 +45,21 @@ Test the query:
 
 ## Configuration
 
-In order to directly run `node index.js` and/or override the default configuration, you need to export the following variables:
+In order to run `node index.js` directly and/or override the default configuration, you need to export the following variables:
 * Required
   * PGUSER="cod-wz-tourney"
   * PGPASSWORD="cod-wz-tourney"
   * PGDATABASE="cod-wz-tourney"
 * Optional
+  * NODE_ENV="dev"
+  * SERVER_PORT="8888"
   * PGHOST="localhost"
   * PGPORT="5432"
   * PGSCHEMA="public"
 
-This let you run the API server against your own database. The defaults target the Docker instance.
+This let you run the API server against your own database. The defaults target the Docker instance defined in `docker-compose.yml`.
+
+The scripts in the `utils/` directory will load these values from the `.env` file.
 
 ## Create database migrations
 
