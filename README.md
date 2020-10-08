@@ -98,3 +98,57 @@ In order to create a new one, use
 ```
 
 Then edit the newly created SQL files: `migrations/sqls/*-${MIGRATION_NAME}-*.sql`
+
+## Class diagram
+
+```mermaid
+classDiagram
+  class Tournament {
+    +String name
+    +Date startDate
+    +Date endDate
+    +Roster roster
+    +List~Team~ teams
+
+    +createRandomTeams() List~Team~
+  }
+
+  class Roster {
+    +List~Player~ players
+  }
+
+  class Player {
+    +String name
+    +String activisionId
+  }
+
+  class Team {
+    +String name
+    +List~Player~ players
+    +List~Game~ games
+    +int placement
+
+    +getTotalPoints() int
+  }
+
+  class Game {
+    +Team team
+    +List~PlayerResult~ playersResults
+    +int placement
+
+    +getPoints() int
+  }
+
+  class PlayerResult {
+    +Player player
+    +int kills
+  }
+
+  Tournament "1..*" o-- "1" Roster
+  Tournament "1" *-- "1..*" Team
+  Roster "1..*" o-- "1..*" Player
+  Team "1..*" o-- "1..*" Player
+  Team "1" *-- "1..*" Game
+  Game "1" *-- "1..*" PlayerResult
+  PlayerResult "1..*" o-- "1" Player
+```
