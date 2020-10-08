@@ -3,13 +3,17 @@ classDiagram
     +String name
     +Date startDate
     +Date endDate
+    +int gameLimit
     +Roster roster
     +List~Team~ teams
+    +bool isClosed
 
     +createRandomTeams() List~Team~
+    +getResults() List~Team~
   }
 
   class Roster {
+    +String name
     +List~Player~ players
   }
 
@@ -20,16 +24,18 @@ classDiagram
 
   class Team {
     +String name
+    +Player teamLeader
     +List~Player~ players
     +List~Game~ games
     +int placement
 
     +getTotalPoints() int
+    +fetchGames(Date startDate, Date endDate, int limit) List~Game~
   }
 
   class Game {
     +Team team
-    +List~PlayerResult~ playersResults
+    +List~PlayerResult~ playerResults
     +int placement
 
     +getPoints() int
