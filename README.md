@@ -101,4 +101,6 @@ Then edit the newly created SQL files: `migrations/sqls/*-${MIGRATION_NAME}-*.sq
 
 ## Class diagram
 
-![class-diagram](class-diagram.jpg)
+View and edit `docs/class-diagram.mmd` on [Mermaid Live Editor](https://mermaid-js.github.io/mermaid-live-editor/).
+
+![class-diagram](docs/class-diagram.jpg)
