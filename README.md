@@ -94,7 +94,7 @@ This project uses [db-migrate](https://github.com/db-migrate/node-db-migrate) to
 In order to create a new one, use
 
 ```bash
-./node_modules/db-migrate/bin/db-migrate create -e dev ${MIGRATION_NAME}
+npx db-migrate create -e dev ${MIGRATION_NAME}
 ```
 
 Then edit the newly created SQL files: `migrations/sqls/*-${MIGRATION_NAME}-*.sql`
