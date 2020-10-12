@@ -17,7 +17,8 @@ module.exports = {
   },
 
   Mutation: {
-    // TODO: decide if we let users register
+    // Disable user registration
+    /*
     async register(root, { email, username, password }, { user }, info) {
       if (user) throw new Error("Already logged in");
 
@@ -32,6 +33,7 @@ module.exports = {
         }
       );
     },
+    */
 
     async login(root, { email, password }, { user }, info) {
       if (user) throw new Error("Already logged in");

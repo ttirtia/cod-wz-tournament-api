@@ -1,0 +1,3 @@
+# Shamelessly copied from https://www.apollographql.com/docs/apollo-server/schema/scalars-enums/#date-as-a-scalar
+
+scalar Date
