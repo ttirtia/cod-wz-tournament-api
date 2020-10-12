@@ -7,6 +7,7 @@ classDiagram
     +Roster roster
     +List~Team~ teams
     +bool isClosed
+    +PointsCalculationRule pointsCalculationRule
 
     +createRandomTeams() List~Team~
     +getResults() List~Team~
@@ -46,10 +47,20 @@ classDiagram
     +int kills
   }
 
+  class PointsCalculationRule {
+    +Object leftOperand
+    +Object rightOperand
+    +String operator
+
+    +getResult() int
+  }
+
   Tournament "1..*" o-- "1" Roster
+  Tournament "1..*" o-- "1" PointsCalculationRule
   Tournament "1" *-- "1..*" Team
   Roster "1..*" o-- "1..*" Player
   Team "1..*" o-- "1..*" Player
   Team "1" *-- "1..*" Game
   Game "1" *-- "1..*" PlayerResult
   PlayerResult "1..*" o-- "1" Player
+  PointsCalculationRule "1" *-- "0..2" PointsCalculationRule
