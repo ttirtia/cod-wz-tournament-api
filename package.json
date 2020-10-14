@@ -22,14 +22,15 @@
     "apollo-server-koa": "^2.18.1",
     "bcrypt": "^5.0.0",
     "call-of-duty-api": "^1.2.16",
-    "db-migrate": "^0.11.11",
-    "db-migrate-pg": "^1.2.2",
     "graphql": "^15.3.0",
     "jsonwebtoken": "^8.5.1",
     "koa-jwt": "^4.0.0",
-    "pg": "^8.4.0"
+    "pg": "^8.4.0",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^6.3.5"
   },
   "devDependencies": {
-    "prompt": "^1.0.0"
+    "prompt": "^1.0.0",
+    "sequelize-cli": "^6.2.0"
   }
 }

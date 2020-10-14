@@ -87,17 +87,31 @@ This let you run the API server against your own database. The defaults target t
 
 The scripts in the `utils/` directory will load these values from the `.env` file.
 
-## Create database migrations
+## Database migrations
 
-This project uses [db-migrate](https://github.com/db-migrate/node-db-migrate) to manage database migrations.
+This project uses [sequelize](https://sequelize.org/master/) to manage database migrations.
 
-In order to create a new one, use
+In order to create a new migration, run:
 
 ```bash
-npx db-migrate create -e dev ${MIGRATION_NAME}
+npx sequelize-cli migration:generate --name ${MIGRATION_NAME}
 ```
 
-Then edit the newly created SQL files: `migrations/sqls/*-${MIGRATION_NAME}-*.sql`
+Then edit the newly created SQL file: `migrations/*-${MIGRATION_NAME}.js`
+
+Refer to the [documentation](https://sequelize.org/master/manual/migrations.html) to learn how to write a migration.
+
+After that, you will need to trigger the migrations manually with:
+
+```bash
+npx sequelize-cli db:migrate
+```
+
+At least the following envrionment variables are required:
+* NODE_ENV="dev"
+* PGUSER="cod-wz-tourney"
+* PGPASSWORD="cod-wz-tourney"
+* PGDATABASE="cod-wz-tourney"
 
 ## Class diagram
 
