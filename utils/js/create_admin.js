@@ -44,7 +44,7 @@ prompt.get(schema, async (promptError, result) => {
         is_admin: true,
       });
 
-      User.console.log(
+      console.log(
         "Created user " + admin.username + " (" + admin.email + ")"
       );
     } catch (createError) {
