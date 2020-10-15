@@ -3,7 +3,7 @@
 const { Model } = require("sequelize");
 const bcrypt = require("bcrypt");
 
-const bcrypt_rounds = 5;
+const BCRYPT_ROUNDS = 5;
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false,
         set(value) {
-          this.setDataValue("password", bcrypt.hashSync(value, bcrypt_rounds));
+          this.setDataValue("password", bcrypt.hashSync(value, BCRYPT_ROUNDS));
         },
       },
       isAdmin: {
