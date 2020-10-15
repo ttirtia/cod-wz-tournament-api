@@ -16,8 +16,8 @@ module.exports = {
           "email"       TEXT UNIQUE NOT NULL,
           "password"    TEXT NOT NULL,
           "isAdmin"     BOOLEAN NOT NULL DEFAULT false,
-          "createdAt"   TIMESTAMP WITH TIME ZONE,
-          "updatedAt"   TIMESTAMP WITH TIME ZONE
+          "createdAt"   TIMESTAMP WITH TIME ZONE NOT NULL,
+          "updatedAt"   TIMESTAMP WITH TIME ZONE NOT NULL
         );`,
         { transaction: transaction }
       );
