@@ -11,13 +11,13 @@ module.exports = {
 
       await queryInterface.sequelize.query(
         `CREATE TABLE "Users" (
-          id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-          username          TEXT UNIQUE NOT NULL,
-          email             TEXT UNIQUE NOT NULL,
-          password          TEXT NOT NULL,
-          is_admin          BOOLEAN NOT NULL DEFAULT false,
-          creation_time     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          modification_time TIMESTAMP WITH TIME ZONE
+          "id"          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          "username"    TEXT UNIQUE NOT NULL,
+          "email"       TEXT UNIQUE NOT NULL,
+          "password"    TEXT NOT NULL,
+          "isAdmin"     BOOLEAN NOT NULL DEFAULT false,
+          "createdAt"   TIMESTAMP WITH TIME ZONE,
+          "updatedAt"   TIMESTAMP WITH TIME ZONE
         );`,
         { transaction: transaction }
       );

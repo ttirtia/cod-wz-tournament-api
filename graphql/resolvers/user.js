@@ -9,7 +9,7 @@ const jwt_token_timeout = "1d";
 module.exports = {
   Query: {
     async users(root, args, { user }, info) {
-      if (!user || !user.is_admin) throw new Error("Unauthorized");
+      if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
       return await User.findAll();
     },
@@ -26,7 +26,7 @@ module.exports = {
           username: username,
           email: email,
           password: password,
-          is_admin: false,
+          isAdmin: false,
         });
 
         return jwt.sign(
@@ -34,7 +34,7 @@ module.exports = {
             id: res.id,
             username: res.username,
             email: res.email,
-            is_admin: res.is_admin,
+            isAdmin: res.isAdmin,
           },
           process.env.JWT_SIGNING_KEY,
           {
@@ -61,7 +61,7 @@ module.exports = {
           id: res.id,
           username: res.username,
           email: res.email,
-          is_admin: res.is_admin,
+          isAdmin: res.isAdmin,
         },
         process.env.JWT_SIGNING_KEY,
         {
