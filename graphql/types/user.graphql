@@ -3,9 +3,9 @@ type User {
   username: String!
   email: String!
   password: String!
-  is_admin: Boolean!
-  creation_time: Date!
-  modification_time: Date
+  isAdmin: Boolean!
+  createdAt: Date!
+  updatedAt: Date
 }
 
 type Mutation {

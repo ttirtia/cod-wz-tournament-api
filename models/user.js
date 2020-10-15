@@ -41,24 +41,15 @@ module.exports = (sequelize, DataTypes) => {
           this.setDataValue("password", bcrypt.hashSync(value, bcrypt_rounds));
         },
       },
-      is_admin: {
+      isAdmin: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-      },
-      creation_time: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-      },
-      modification_time: {
-        type: DataTypes.DATE,
       },
     },
     {
       sequelize,
       modelName: "User",
-      timestamps: false,
     }
   );
 

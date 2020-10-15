@@ -23,19 +23,13 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false,
       },
-      is_admin: {
+      isAdmin: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false,
       },
-      creation_time: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-      modification_time: {
-        type: Sequelize.DATE,
-      },
+      createdAt: Sequelize.DATE,
+      updatedAt: Sequelize.DATE,
     });
   },
 
