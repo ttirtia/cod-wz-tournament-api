@@ -4,7 +4,7 @@ const { User } = require("../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const jwt_token_timeout = "1d";
+const JWT_TOKEN_TIMEOUT = "1d";
 
 module.exports = {
   Query: {
@@ -38,7 +38,7 @@ module.exports = {
           },
           process.env.JWT_SIGNING_KEY,
           {
-            expiresIn: jwt_token_timeout,
+            expiresIn: JWT_TOKEN_TIMEOUT,
           }
         );
       } catch (createError) {
@@ -65,7 +65,7 @@ module.exports = {
         },
         process.env.JWT_SIGNING_KEY,
         {
-          expiresIn: jwt_token_timeout,
+          expiresIn: JWT_TOKEN_TIMEOUT,
         }
       );
     },
