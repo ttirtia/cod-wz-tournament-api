@@ -1,0 +1,34 @@
+type Player {
+  id: ID!
+  name: String!
+  activisionId: String!
+  createdAt: Date!
+  updatedAt: Date
+}
+
+input CreatePlayerInput {
+  name: String!
+  activisionId: String!
+}
+
+input UpdatePlayerInput {
+  name: String
+  activisionId: String
+}
+
+input PlayerFilter {
+  id: ID
+  name: String
+  activisionId: String
+}
+
+type Mutation {
+  createPlayer(player: CreatePlayerInput!): Player!
+  updatePlayer(id: ID!, player: UpdatePlayerInput!): Player!
+  deletePlayer(id: ID!): Boolean!
+}
+
+type Query {
+  allPlayers: [Player]
+  players(filter: PlayerFilter!): [Player]
+}
