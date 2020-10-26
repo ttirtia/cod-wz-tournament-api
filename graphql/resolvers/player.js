@@ -5,14 +5,15 @@ const { Player } = require("../../models");
 
 module.exports = {
   Query: {
-    async allPlayers(root, args, { user }, info) {
+    async findPlayers(root, { filter }, { user }, info) {
       if (!user) throw new Error("Unauthorized");
 
-      return await Player.findAll({ order: [["name", "ASC"]] });
-    },
-
-    async players(root, { filter }, { user }, info) {
-      if (!user) throw new Error("Unauthorized");
+      if (typeof filter === "undefined") {
+        return await Player.findAll({
+          order: [["name", "ASC"]],
+          raw: true,
+        });
+      }
 
       let queryFilter = [];
 
@@ -23,6 +24,7 @@ module.exports = {
       if (typeof filter.name !== "undefined") {
         queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
       }
+
       if (typeof filter.activisionId !== "undefined") {
         queryFilter.push({
           activisionId: { [Op.iLike]: "%" + filter.activisionId + "%" },
