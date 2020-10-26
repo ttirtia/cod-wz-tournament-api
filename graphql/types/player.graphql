@@ -29,6 +29,5 @@ type Mutation {
 }
 
 type Query {
-  allPlayers: [Player]
-  players(filter: PlayerFilter!): [Player]
+  findPlayers(filter: PlayerFilter): [Player]
 }
