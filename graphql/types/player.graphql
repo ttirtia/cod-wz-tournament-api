@@ -2,10 +2,7 @@ type Player {
   id: ID!
   name: String!
   activisionId: String!
-<<<<<<< HEAD
   rosters: [Roster]
-=======
->>>>>>> 121a4ea (implement initial crud for player class)
   createdAt: Date!
   updatedAt: Date
 }
