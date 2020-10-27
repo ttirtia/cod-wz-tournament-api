@@ -26,7 +26,7 @@ async function setPlayers(roster, players) {
   await roster.setPlayers(
     await Player.findAll({
       where: {
-        id: { [Op.in]: players },
+        id: { [Op.in]: players || [] },
       },
     })
   );
@@ -106,7 +106,12 @@ module.exports = {
       if (typeof result === "undefined") throw new Error("Roster not found");
 
       if (typeof roster.name !== "undefined") result.name = roster.name;
-      result.save();
+
+      try {
+        await result.save();
+      } catch (saveError) {
+        throw saveError;
+      }
 
       return await setPlayers(result, roster.players);
     },
