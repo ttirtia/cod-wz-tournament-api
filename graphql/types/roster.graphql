@@ -1,0 +1,32 @@
+type Roster {
+  id: ID!
+  name: String!
+  players: [Player]
+  createdAt: Date!
+  updatedAt: Date
+}
+
+input CreateRosterInput {
+  name: String!
+  players: [ID]
+}
+
+input UpdateRosterInput {
+  name: String
+  players: [ID]
+}
+
+input RosterFilter {
+  id: ID
+  name: String
+}
+
+type Mutation {
+  createRoster(roster: CreateRosterInput!): Roster!
+  updateRoster(id: ID!, roster: UpdateRosterInput!): Roster!
+  deleteRoster(id: ID!): Boolean!
+}
+
+type Query {
+  findRosters(filter: RosterFilter): [Roster]
+}
