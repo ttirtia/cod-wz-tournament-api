@@ -9,11 +9,16 @@ type User {
 }
 
 type Mutation {
-  # Disable user registration
-  # register(username: String!, email: String!, password: String!): String!
   login(email: String!, password: String!): String!
 }
 
+input UserFilter {
+  id: ID
+  username: String
+  email: String
+  isAdmin: Boolean
+}
+
 type Query {
-  users: [User]
+  findUsers(filter: UserFilter): [User]
 }
