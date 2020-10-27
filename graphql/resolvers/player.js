@@ -1,17 +1,36 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Player } = require("../../models");
+const { Player, Roster } = require("../../models");
+
+const ROSTERR_INCLUDE = {
+  model: Roster,
+  as: "rosters",
+  through: {
+    attributes: [],
+  },
+};
+
+// Avoid eager-loading if possible
+function getInclude(info) {
+  return info.fieldNodes[0].selectionSet.selections.find(
+    (field) => field.name.value === "rosters"
+  )
+    ? [ROSTERR_INCLUDE]
+    : [];
+}
 
 module.exports = {
   Query: {
     async findPlayers(root, { filter }, { user }, info) {
       if (!user) throw new Error("Unauthorized");
 
+      let include = getInclude(info);
+
       if (typeof filter === "undefined") {
         return await Player.findAll({
           order: [["name", "ASC"]],
-          raw: true,
+          include: include,
         });
       }
 
@@ -36,7 +55,7 @@ module.exports = {
           [Op.and]: queryFilter,
         },
         order: [["name", "ASC"]],
-        raw: true,
+        include: include,
       });
     },
   },

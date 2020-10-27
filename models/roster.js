@@ -3,17 +3,17 @@
 const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  class Player extends Model {
+  class Roster extends Model {
     static associate(models) {
-      Player.belongsToMany(models.Roster, {
-        as: "rosters",
+      Roster.belongsToMany(models.Player, {
+        as: "players",
         through: "players_rosters",
-        foreignKey: "player_id",
-        otherKey: "roster_id",
+        foreignKey: "roster_id",
+        otherKey: "player_id",
       });
     }
   }
-  Player.init(
+  Roster.init(
     {
       id: {
         type: DataTypes.UUID,
@@ -26,17 +26,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
-      activisionId: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-        unique: true,
-      },
     },
     {
       sequelize,
-      modelName: "Player",
+      modelName: "Roster",
     }
   );
 
-  return Player;
+  return Roster;
 };
