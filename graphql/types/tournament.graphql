@@ -1,0 +1,47 @@
+type Tournament {
+  id: ID!
+  name: String!
+  startDate: Date!
+  endDate: Date!
+  gameLimit: Int!
+  isOpen: Boolean!
+  roster: Roster
+  createdAt: Date!
+  updatedAt: Date
+}
+
+input CreateTournamentInput {
+  name: String!
+  startDate: Date!
+  endDate: Date!
+  gameLimit: Int
+  isOpen: Boolean
+  roster: ID
+}
+
+input UpdateTournamentInput {
+  name: String
+  startDate: Date
+  endDate: Date
+  gameLimit: Int
+  isOpen: Boolean
+  roster: ID
+}
+
+input TournamentFilter {
+  id: ID
+  name: String
+  startDate: Date
+  endDate: Date
+  isOpen: Boolean
+}
+
+type Mutation {
+  createTournament(tournament: CreateTournamentInput!): Tournament!
+  updateTournament(id: ID!, tournament: UpdateTournamentInput!): Tournament!
+  deleteTournament(id: ID!): Boolean!
+}
+
+type Query {
+  findTournaments(filter: TournamentFilter): [Tournament]
+}

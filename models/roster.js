@@ -11,6 +11,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "roster_id",
         otherKey: "player_id",
       });
+
+      Roster.hasMany(models.Tournament, {
+        as: "tournaments",
+        foreignKey: "roster_id"
+      })
     }
   }
   Roster.init(
