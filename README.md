@@ -62,7 +62,7 @@ You may now run queries:
 
 ```graphql
 query {
-  users {
+  findUsers {
     username
     email
   }
