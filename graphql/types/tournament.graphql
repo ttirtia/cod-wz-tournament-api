@@ -6,6 +6,7 @@ type Tournament {
   gameLimit: Int!
   isOpen: Boolean!
   roster: Roster
+  teams: [Team]
   createdAt: Date!
   updatedAt: Date
 }

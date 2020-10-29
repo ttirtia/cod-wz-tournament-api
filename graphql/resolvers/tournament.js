@@ -1,20 +1,50 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Tournament, Roster } = require("../../models");
+const { Tournament, Roster, Team, Player } = require("../../models");
 
 const ROSTER_INCLUDE = {
   model: Roster,
   as: "roster",
 };
 
+const TEAM_INCLUDE = {
+  model: Team,
+  as: "teams",
+  // TODO: decide if we want nested includes
+  /*
+  include: [
+    {
+      model: Player,
+      as: "players"
+    },
+    {
+      model: Player,
+      as: "teamLeader"
+    }
+  ],
+  */
+};
+
 // Avoid eager-loading if possible
 function getInclude(info) {
-  return info.fieldNodes[0].selectionSet.selections.find(
-    (field) => field.name.value === "roster"
+  let include = [];
+
+  if (
+    info.fieldNodes[0].selectionSet.selections.find(
+      (field) => field.name.value === "roster"
+    )
   )
-    ? [ROSTER_INCLUDE]
-    : [];
+    include.push(ROSTER_INCLUDE);
+
+  if (
+    info.fieldNodes[0].selectionSet.selections.find(
+      (field) => field.name.value === "teams"
+    )
+  )
+    include.push(TEAM_INCLUDE);
+
+  return include;
 }
 
 async function setRoster(tournament, roster) {

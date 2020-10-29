@@ -3,6 +3,8 @@ type Player {
   name: String!
   activisionId: String!
   rosters: [Roster]
+  teams: [Team]
+  teamLeaderships: [Team]
   createdAt: Date!
   updatedAt: Date
 }
