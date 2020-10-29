@@ -82,7 +82,8 @@ module.exports = {
 
       let include = getInclude(info);
 
-      if (tournament.startDate >= tournament.endDate) throw new Error("startDate should be before endDate");
+      if (tournament.startDate >= tournament.endDate)
+        throw new Error("startDate should be before endDate");
 
       let result = await Tournament.create(
         {
@@ -116,7 +117,8 @@ module.exports = {
         include: include,
       });
 
-      if (typeof result === "undefined") throw new Error("Tournament not found");
+      if (typeof result === "undefined")
+        throw new Error("Tournament not found");
 
       let tmpStartDate = result.startDate.getTime();
       let tmpEndDate = result.endDate.getTime();

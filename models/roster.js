@@ -14,8 +14,8 @@ module.exports = (sequelize, DataTypes) => {
 
       Roster.hasMany(models.Tournament, {
         as: "tournaments",
-        foreignKey: "roster_id"
-      })
+        foreignKey: "roster_id",
+      });
     }
   }
   Roster.init(
