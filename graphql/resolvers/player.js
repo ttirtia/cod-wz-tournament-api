@@ -3,7 +3,7 @@
 const { Op } = require("sequelize");
 const { Player, Roster } = require("../../models");
 
-const ROSTERR_INCLUDE = {
+const ROSTER_INCLUDE = {
   model: Roster,
   as: "rosters",
   through: {
@@ -16,7 +16,7 @@ function getInclude(info) {
   return info.fieldNodes[0].selectionSet.selections.find(
     (field) => field.name.value === "rosters"
   )
-    ? [ROSTERR_INCLUDE]
+    ? [ROSTER_INCLUDE]
     : [];
 }
 
