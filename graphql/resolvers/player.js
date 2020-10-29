@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Player, Roster } = require("../../models");
+const { Player, Roster, Team } = require("../../models");
 
 const ROSTER_INCLUDE = {
   model: Roster,
@@ -11,13 +11,45 @@ const ROSTER_INCLUDE = {
   },
 };
 
+const TEAM_INCLUDE = {
+  model: Team,
+  as: "teams",
+  through: {
+    attributes: [],
+  },
+};
+
+const TEAM_LEADER_INCLUDE = {
+  model: Team,
+  as: "teamLeaderships",
+};
+
 // Avoid eager-loading if possible
 function getInclude(info) {
-  return info.fieldNodes[0].selectionSet.selections.find(
-    (field) => field.name.value === "rosters"
+  let include = [];
+
+  if (
+    info.fieldNodes[0].selectionSet.selections.find(
+      (field) => field.name.value === "rosters"
+    )
   )
-    ? [ROSTER_INCLUDE]
-    : [];
+    include.push(ROSTER_INCLUDE);
+
+  if (
+    info.fieldNodes[0].selectionSet.selections.find(
+      (field) => field.name.value === "teams"
+    )
+  )
+    include.push(TEAM_INCLUDE);
+
+  if (
+    info.fieldNodes[0].selectionSet.selections.find(
+      (field) => field.name.value === "teamLeaderships"
+    )
+  )
+    include.push(TEAM_LEADER_INCLUDE);
+
+  return include;
 }
 
 module.exports = {

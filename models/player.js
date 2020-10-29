@@ -11,6 +11,18 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "player_id",
         otherKey: "roster_id",
       });
+
+      Player.belongsToMany(models.Team, {
+        as: "teams",
+        through: "players_teams",
+        foreignKey: "player_id",
+        otherKey: "team_id",
+      });
+
+      Player.hasMany(models.Team, {
+        as: "teamLeaderships",
+        foreignKey: "team_leader_id",
+      });
     }
   }
   Player.init(

@@ -1,0 +1,39 @@
+type Team {
+  id: ID!
+  name: String!
+  placement: Int
+  teamLeader: Player
+  players: [Player]
+  tournament: Tournament!
+  createdAt: Date!
+  updatedAt: Date
+}
+
+input CreateTeamInput {
+  name: String!
+  tournament: ID!
+  teamLeader: ID
+  players: [ID]
+}
+
+input UpdateTeamInput {
+  name: String
+  placement: Int
+  teamLeader: ID
+  players: [ID]
+}
+
+input TeamFilter {
+  id: ID
+  name: String
+}
+
+type Mutation {
+  createTeam(team: CreateTeamInput!): Team!
+  updateTeam(id: ID!, team: UpdateTeamInput!): Team!
+  deleteTeam(id: ID!): Boolean!
+}
+
+type Query {
+  findTeams(filter: TeamFilter): [Team]
+}
