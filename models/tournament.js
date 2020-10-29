@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
   class Tournament extends Model {
     static associate(models) {
       Tournament.belongsTo(models.Roster, {
-        as: "roster"
+        as: "roster",
       });
     }
   }
