@@ -82,8 +82,14 @@ In order to run `node index.js` directly and/or override the default configurati
   * PGHOST="localhost"
   * PGPORT="5432"
   * PGSCHEMA="public"
+  * LOG_LEVEL="info"
+  * LOG_FILE=""
+  * LOG_MAX_SIZE="10m"
+  * LOG_MAX_FILES="7d"
 
-This let you run the API server against your own database. The defaults target the Docker instance defined in `docker-compose.yml`.
+The PostgreSQL variables let you run the API server against your own database. The defaults target the Docker instance defined in `docker-compose.yml`.
+
+This application only logs to the console by default. To enable logging to a file, use the `LOG_FILE` environment variable.
 
 The scripts in the `utils/` directory will load these values from the `.env` file.
 

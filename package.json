@@ -26,7 +26,9 @@
     "koa-jwt": "^4.0.0",
     "pg": "^8.5.1",
     "pg-hstore": "^2.3.3",
-    "sequelize": "^6.4.0"
+    "sequelize": "^6.4.0",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.0"
   },
   "devDependencies": {
     "prompt": "^1.1.0",
