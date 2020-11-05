@@ -3,6 +3,8 @@
 const { Op } = require("sequelize");
 const { Player, Roster, Team } = require("../../models");
 
+const logger = require("../../logger");
+
 const ROSTER_INCLUDE = {
   model: Roster,
   as: "rosters",
@@ -60,10 +62,19 @@ module.exports = {
       let include = getInclude(info);
 
       if (typeof filter === "undefined") {
-        return await Player.findAll({
-          order: [["name", "ASC"]],
-          include: include,
-        });
+        logger.debug("Players search");
+
+        try {
+          return await Player.findAll({
+            order: [["name", "ASC"]],
+            include: include,
+          });
+        } catch (findError) {
+          logger.error(findError, {
+            type: "Players search",
+          });
+          throw findError;
+        }
       }
 
       let queryFilter = [];
@@ -82,13 +93,22 @@ module.exports = {
         });
       }
 
-      return await Player.findAll({
-        where: {
-          [Op.and]: queryFilter,
-        },
-        order: [["name", "ASC"]],
-        include: include,
-      });
+      logger.debug("Players search", { fields: { filter: filter } });
+
+      try {
+        return await Player.findAll({
+          where: {
+            [Op.and]: queryFilter,
+          },
+          order: [["name", "ASC"]],
+          include: include,
+        });
+      } catch (findError) {
+        logger.error(findError, {
+          fields: { type: "Players search", filter: filter },
+        });
+        throw findError;
+      }
     },
   },
 
@@ -96,30 +116,74 @@ module.exports = {
     async createPlayer(root, { player }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      return await Player.create({
-        name: player.name,
-        activisionId: player.activisionId,
+      logger.info("Player creation", {
+        fields: { player: player },
       });
+
+      try {
+        return await Player.create({
+          name: player.name,
+          activisionId: player.activisionId,
+        });
+      } catch (createError) {
+        logger.error(createError, {
+          fields: {
+            type: "Player creation",
+            player: player,
+          },
+        });
+        throw createError;
+      }
     },
 
     async deletePlayer(root, { id }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      return await Player.destroy({ where: { id: id } });
+      logger.info("Player deletion", {
+        fields: { id: id },
+      });
+
+      try {
+        return await Player.destroy({ where: { id: id } });
+      } catch (deleteError) {
+        logger.error(deleteError, {
+          fields: { type: "Players search", id: id },
+        });
+        throw deleteError;
+      }
     },
 
     async updatePlayer(root, { id, player }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      const [numberOfAffectedRows, affectedRows] = await Player.update(
-        {
-          name: player.name,
-          activisionId: player.activisionId,
-        },
-        { where: { id: id }, returning: true, plain: true }
-      );
+      const logFields = {
+        id: id,
+        player: player,
+      };
 
-      return affectedRows;
+      logger.info("Player update", {
+        fields: logFields,
+      });
+
+      try {
+        const [numberOfAffectedRows, affectedRows] = await Player.update(
+          {
+            name: player.name,
+            activisionId: player.activisionId,
+          },
+          { where: { id: id }, returning: true, plain: true }
+        );
+
+        return affectedRows;
+      } catch (updateError) {
+        logger.error(updateError, {
+          fields: {
+            type: "Player update",
+            logFields,
+          },
+        });
+        throw updateError;
+      }
     },
   },
 };
