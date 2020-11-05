@@ -4,6 +4,8 @@ const koa = require("koa");
 const jwt = require("koa-jwt");
 const { ApolloServer } = require("apollo-server-koa");
 
+const logger = require("./logger");
+
 const SERVER_PORT = process.env.SERVER_PORT || 8888;
 
 const typeDefs = require("./graphql/types");
@@ -20,8 +22,8 @@ module.exports.start = function () {
   app.use(jwt({ secret: process.env.JWT_SIGNING_KEY, passthrough: true }));
   server.applyMiddleware({ app });
   app.listen({ port: SERVER_PORT }, () =>
-    console.log(
-      `🚀 Server ready at http://localhost:${SERVER_PORT}${server.graphqlPath}`
+    logger.info(
+      `Server started on port ${SERVER_PORT}`
     )
   );
 };
