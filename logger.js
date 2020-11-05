@@ -40,8 +40,8 @@ const logger = createLogger({
 });
 
 if (typeof process.env.LOG_FILE !== "undefined") {
-  let filename = path.basename(process.env.LOG_FILE);
-  let dirname = path.dirname(process.env.LOG_FILE);
+  const filename = path.basename(process.env.LOG_FILE);
+  const dirname = path.dirname(process.env.LOG_FILE);
 
   logger.add(
     new transports.DailyRotateFile({
