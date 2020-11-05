@@ -71,7 +71,7 @@ module.exports = {
           });
         } catch (findError) {
           logger.error(findError, {
-            type: "Players search",
+            fields: { type: "Players search" },
           });
           throw findError;
         }
