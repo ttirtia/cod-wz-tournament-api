@@ -17,20 +17,20 @@
   },
   "homepage": "https://github.com/ttirtia/cod-wz-tournament-api#readme",
   "dependencies": {
-    "@graphql-tools/load-files": "^6.2.4",
-    "@graphql-tools/merge": "^6.2.4",
-    "apollo-server-koa": "^2.18.1",
+    "@graphql-tools/load-files": "^6.2.5",
+    "@graphql-tools/merge": "^6.2.7",
+    "apollo-server-koa": "^2.19.2",
     "bcrypt": "^5.0.0",
-    "call-of-duty-api": "^1.2.16",
-    "graphql": "^15.3.0",
+    "call-of-duty-api": "^1.3.1",
+    "graphql": "^15.4.0",
     "jsonwebtoken": "^8.5.1",
     "koa-jwt": "^4.0.0",
-    "pg": "^8.4.0",
+    "pg": "^8.5.1",
     "pg-hstore": "^2.3.3",
-    "sequelize": "^6.3.5"
+    "sequelize": "^6.4.0"
   },
   "devDependencies": {
-    "prompt": "^1.0.0",
+    "prompt": "^1.1.0",
     "sequelize-cli": "^6.2.0"
   }
 }

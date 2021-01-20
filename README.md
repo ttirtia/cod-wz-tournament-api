@@ -23,7 +23,7 @@ npm install
 2. Run the server
 
 ```bash
-./utils/local_setup.sh
+./utils/local_run.sh
 ```
 
 The API server will be started on port **8888** by default (can be overridden with the environment variable `SERVER_PORT`, see below).
