@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: docker.io/postgres:13.0
+    image: docker.io/postgres:13.1
     container_name: cod-wz-tournament-database
     ports:
       - "5432:5432"
