@@ -5,6 +5,8 @@ const { User } = require("../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+const logger = require("../../logger");
+
 const JWT_TOKEN_TIMEOUT = "1d";
 
 module.exports = {
@@ -12,11 +14,25 @@ module.exports = {
     async findUsers(root, { filter }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
+      const logFields = {
+        filter: filter,
+      };
+
       if (typeof filter === "undefined") {
-        return await User.findAll({
-          order: [["username", "ASC"]],
-          raw: true,
-        });
+        logger.debug("User search");
+
+        try {
+          return await User.findAll({
+            order: [["username", "ASC"]],
+            raw: true,
+          });
+        } catch (findError) {
+          logger.error(findError, {
+            fields: { type: "User search" },
+          });
+
+          throw findError;
+        }
       }
 
       let queryFilter = [];
@@ -43,13 +59,26 @@ module.exports = {
         });
       }
 
-      return await User.findAll({
-        where: {
-          [Op.and]: queryFilter,
-        },
-        order: [["username", "ASC"]],
-        raw: true,
-      });
+      logger.debug("User search", { fields: logFields });
+
+      try {
+        return await User.findAll({
+          where: {
+            [Op.and]: queryFilter,
+          },
+          order: [["username", "ASC"]],
+          raw: true,
+        });
+      } catch (findError) {
+        logger.error(findError, {
+          fields: {
+            type: "User search",
+            logFields,
+          },
+        });
+
+        throw findError;
+      }
     },
   },
 
@@ -57,11 +86,35 @@ module.exports = {
     async login(root, { email, password }, { user }, info) {
       if (user) throw new Error("Already logged in");
 
+      const logFields = {
+        email: email,
+      };
+
       const res = await User.findOne({ where: { email: email } });
-      if (res === null) throw new Error("Unable to login");
+      if (res === null) {
+        logger.error("Unable to login - user not found", {
+          fields: {
+            type: "User login",
+            logFields,
+          },
+        });
+
+        throw new Error("Unable to login");
+      }
 
       const isMatch = bcrypt.compareSync(password, res.password);
-      if (!isMatch) throw new Error("Unable to login");
+      if (!isMatch) {
+        logger.error("Unable to login - wrong password", {
+          fields: {
+            type: "User login",
+            logFields,
+          },
+        });
+
+        throw new Error("Unable to login");
+      }
+
+      logger.debug("User login", { fields: logFields });
 
       return jwt.sign(
         {

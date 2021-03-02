@@ -3,6 +3,8 @@
 const { Op } = require("sequelize");
 const { Team, Player, Tournament } = require("../../models");
 
+const logger = require("../../logger");
+
 const PLAYER_INCLUDE = {
   model: Player,
   as: "players",
@@ -24,7 +26,7 @@ const TOURNAMENT_INCLUDE = {
 // Avoid eager-loading if possible
 function getInclude(info) {
   let include = [];
-  
+
   if (
     info.fieldNodes[0].selectionSet.selections.find(
       (field) => field.name.value === "players"
@@ -52,13 +54,29 @@ function getInclude(info) {
 async function setPlayers(team, players) {
   if (typeof players === "undefined") return team;
 
-  await team.setPlayers(
-    await Player.findAll({
-      where: {
-        id: { [Op.in]: players || [] },
+  const logFields = {
+    team: team,
+    players: players,
+  };
+
+  try {
+    await team.setPlayers(
+      await Player.findAll({
+        where: {
+          id: { [Op.in]: players || [] },
+        },
+      })
+    );
+  } catch (setPlayersError) {
+    logger.error(setPlayersError, {
+      fields: {
+        type: "Team setPlayers",
+        logFields,
       },
-    })
-  );
+    });
+
+    throw setPlayersError;
+  }
 
   // `.reload()` is needed otherwise the instance would not be up-to-date
   return team.reload();
@@ -67,7 +85,23 @@ async function setPlayers(team, players) {
 async function setTeamLeader(team, player) {
   if (typeof player === "undefined") return team;
 
-  await team.setTeamLeader(await Player.findByPk(player));
+  const logFields = {
+    team: team,
+    player: player,
+  };
+
+  try {
+    await team.setTeamLeader(await Player.findByPk(player));
+  } catch (setTeamLeaderError) {
+    logger.error(setPlayersError, {
+      fields: {
+        type: "Team setTeamLeader",
+        logFields,
+      },
+    });
+
+    throw setTeamLeaderError;
+  }
 
   // `.reload()` is needed otherwise the instance would not be up-to-date
   return team.reload();
@@ -76,7 +110,23 @@ async function setTeamLeader(team, player) {
 async function setTournament(team, tournament) {
   if (typeof tournament === "undefined") return team;
 
-  await team.setTournament(await Tournament.findByPk(tournament));
+  const logFields = {
+    team: team,
+    tournament: tournament,
+  };
+
+  try {
+    await team.setTournament(await Tournament.findByPk(tournament));
+  } catch (setTournamentError) {
+    logger.error(setTournamentError, {
+      fields: {
+        type: "Team setTournament",
+        logFields,
+      },
+    });
+
+    throw setTournamentError;
+  }
 
   // `.reload()` is needed otherwise the instance would not be up-to-date
   return team.reload();
@@ -87,15 +137,27 @@ module.exports = {
     async findTeams(root, { filter }, { user }, info) {
       if (!user) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      const include = getInclude(info);
 
-      console.log(include);
+      const logFields = {
+        filter: filter,
+      };
 
       if (typeof filter === "undefined") {
-        return await Team.findAll({
-          order: [["name", "ASC"]],
-          include: include,
-        });
+        logger.debug("Team search");
+
+        try {
+          return await Team.findAll({
+            order: [["name", "ASC"]],
+            include: include,
+          });
+        } catch (findError) {
+          logger.error(findError, {
+            fields: { type: "Team search" },
+          });
+
+          throw findError;
+        }
       }
 
       let queryFilter = [];
@@ -108,13 +170,26 @@ module.exports = {
         queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
       }
 
-      return await Team.findAll({
-        where: {
-          [Op.and]: queryFilter,
-        },
-        order: [["name", "ASC"]],
-        include: include,
-      });
+      logger.debug("Team search", { fields: logFields });
+
+      try {
+        return await Team.findAll({
+          where: {
+            [Op.and]: queryFilter,
+          },
+          order: [["name", "ASC"]],
+          include: include,
+        });
+      } catch (findError) {
+        logger.error(findError, {
+          fields: {
+            type: "Team search",
+            logFields,
+          },
+        });
+
+        throw findError;
+      }
     },
   },
 
@@ -122,16 +197,37 @@ module.exports = {
     async createTeam(root, { team }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      const include = getInclude(info);
 
-      let result = await Team.create(
-        {
-          name: team.name,
-        },
-        {
-          include: include,
-        }
-      );
+      const logFields = {
+        team: team,
+      };
+
+      logger.info("Team creation", {
+        fields: logFields,
+      });
+
+      let result;
+
+      try {
+        result = await Team.create(
+          {
+            name: team.name,
+          },
+          {
+            include: include,
+          }
+        );
+      } catch (createError) {
+        logger.error(createError, {
+          fields: {
+            type: "Team creation",
+            logFields,
+          },
+        });
+
+        throw createError;
+      }
 
       await setPlayers(result, team.players);
       await setTeamLeader(result, team.teamLeader);
@@ -141,27 +237,85 @@ module.exports = {
     async deleteTeam(root, { id }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      return await Team.destroy({ where: { id: id } });
+      const logFields = {
+        id: id,
+      };
+
+      logger.info("Team deletion", {
+        fields: logFields,
+      });
+
+      try {
+        return await Team.destroy({ where: { id: id } });
+      } catch (deleteError) {
+        logger.error(deleteError, {
+          fields: {
+            type: "Team deletion",
+            logFields,
+          },
+        });
+
+        throw deleteError;
+      }
     },
 
     async updateTeam(root, { id, team }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      const include = getInclude(info);
 
-      let result = await Team.findOne({
-        where: { id: id },
-        include: include,
-      });
+      const logFields = {
+        id: id,
+        team: team,
+      };
 
-      if (typeof result === "undefined") throw new Error("Team not found");
+      let result;
+
+      try {
+        result = await Team.findOne({
+          where: { id: id },
+          include: include,
+        });
+      } catch (updateFindOneError) {
+        logger.error(updateFindOneError, {
+          fields: {
+            type: "Team update - findOne",
+            id: id,
+          },
+        });
+
+        throw updateFindOneError;
+      }
+
+      if (typeof result === "undefined") {
+        logger.error("Team not found", {
+          fields: {
+            type: "Team update",
+            logFields,
+          },
+        });
+
+        throw new Error("Team not found");
+      }
 
       if (typeof team.name !== "undefined") result.name = team.name;
-      if (typeof team.placement !== "undefined") result.placement = team.placement;
+      if (typeof team.placement !== "undefined")
+        result.placement = team.placement;
+
+      logger.info("Team update", {
+        fields: logFields,
+      });
 
       try {
         await result.save();
       } catch (saveError) {
+        logger.error(saveError, {
+          fields: {
+            type: "Team update",
+            logFields,
+          },
+        });
+
         throw saveError;
       }
 

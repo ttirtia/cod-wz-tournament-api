@@ -3,6 +3,8 @@
 const { Op } = require("sequelize");
 const { Tournament, Roster, Team, Player } = require("../../models");
 
+const logger = require("../../logger");
+
 const ROSTER_INCLUDE = {
   model: Roster,
   as: "roster",
@@ -50,7 +52,23 @@ function getInclude(info) {
 async function setRoster(tournament, roster) {
   if (typeof roster === "undefined" || roster === null) return tournament;
 
-  await tournament.setRoster(await Roster.findByPk(roster));
+  const logFields = {
+    tournament: tournament,
+    roster: roster,
+  };
+
+  try {
+    await tournament.setRoster(await Roster.findByPk(roster));
+  } catch (setRosterError) {
+    logger.error(setRosterError, {
+      fields: {
+        type: "Tournament setRoster",
+        logFields,
+      },
+    });
+
+    throw setRosterError;
+  }
 
   // `.reload()` is needed otherwise the instance would not be up-to-date
   return tournament.reload();
@@ -61,13 +79,27 @@ module.exports = {
     async findTournaments(root, { filter }, { user }, info) {
       if (!user) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      const include = getInclude(info);
+
+      const logFields = {
+        filter: filter,
+      };
 
       if (typeof filter === "undefined") {
-        return await Tournament.findAll({
-          order: [["name", "ASC"]],
-          include: include,
-        });
+        logger.debug("Tournament search");
+
+        try {
+          return await Tournament.findAll({
+            order: [["name", "ASC"]],
+            include: include,
+          });
+        } catch (findError) {
+          logger.error(findError, {
+            fields: { type: "Tournament search" },
+          });
+
+          throw findError;
+        }
       }
 
       let queryFilter = [];
@@ -96,13 +128,26 @@ module.exports = {
         queryFilter.push({ isOpen: filter.isOpen });
       }
 
-      return await Tournament.findAll({
-        where: {
-          [Op.and]: queryFilter,
-        },
-        order: [["name", "ASC"]],
-        include: include,
-      });
+      logger.debug("Tournament search", { fields: logFields });
+
+      try {
+        return await Tournament.findAll({
+          where: {
+            [Op.and]: queryFilter,
+          },
+          order: [["name", "ASC"]],
+          include: include,
+        });
+      } catch (findError) {
+        logger.error(findError, {
+          fields: {
+            type: "Tournament search",
+            logFields,
+          },
+        });
+
+        throw findError;
+      }
     },
   },
 
@@ -110,23 +155,53 @@ module.exports = {
     async createTournament(root, { tournament }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      if (tournament.startDate >= tournament.endDate) {
+        logger.error("startDate should be before endDate", {
+          fields: {
+            type: "Tournament creation",
+            startDate: tournament.startDate,
+            endDate: tournament.endDate,
+          },
+        });
 
-      if (tournament.startDate >= tournament.endDate)
         throw new Error("startDate should be before endDate");
+      }
 
-      let result = await Tournament.create(
-        {
-          name: tournament.name,
-          startDate: tournament.startDate,
-          endDate: tournament.endDate,
-          gameLimit: tournament.gameLimit,
-          isOpen: tournament.isOpen,
-        },
-        {
-          include: include,
-        }
-      );
+      const include = getInclude(info);
+
+      const logFields = {
+        tournament: tournament,
+      };
+
+      logger.info("Tournament creation", {
+        fields: logFields,
+      });
+
+      let result;
+
+      try {
+        result = await Tournament.create(
+          {
+            name: tournament.name,
+            startDate: tournament.startDate,
+            endDate: tournament.endDate,
+            gameLimit: tournament.gameLimit,
+            isOpen: tournament.isOpen,
+          },
+          {
+            include: include,
+          }
+        );
+      } catch (createError) {
+        logger.error(createError, {
+          fields: {
+            type: "Tournament creation",
+            logFields,
+          },
+        });
+
+        throw createError;
+      }
 
       return await setRoster(result, tournament.roster);
     },
@@ -134,21 +209,66 @@ module.exports = {
     async deleteTournament(root, { id }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      return await Tournament.destroy({ where: { id: id } });
+      const logFields = {
+        id: id,
+      };
+
+      logger.info("Tournament deletion", {
+        fields: logFields,
+      });
+
+      try {
+        return await Tournament.destroy({ where: { id: id } });
+      } catch (deleteError) {
+        logger.error(deleteError, {
+          fields: {
+            type: "Tournament deletion",
+            logFields,
+          },
+        });
+
+        throw deleteError;
+      }
     },
 
     async updateTournament(root, { id, tournament }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      const include = getInclude(info);
 
-      let result = await Tournament.findOne({
-        where: { id: id },
-        include: include,
-      });
+      const logFields = {
+        id: id,
+        tournament: tournament,
+      };
 
-      if (typeof result === "undefined")
+      let result;
+
+      try {
+        result = await Tournament.findOne({
+          where: { id: id },
+          include: include,
+        });
+      } catch (updateFindOneError) {
+        logger.error(updateFindOneError, {
+          fields: {
+            type: "Tournament update - findOne",
+            id: id,
+          },
+        });
+
+        throw updateFindOneError;
+      }
+
+      if (typeof result === "undefined") {
+        logger.error("Tournament not found", {
+          fields: {
+            type: "Tournament update",
+            logFields,
+          },
+        });
+
         throw new Error("Tournament not found");
+      }
 
       let tmpStartDate = result.startDate.getTime();
       let tmpEndDate = result.endDate.getTime();
@@ -158,8 +278,17 @@ module.exports = {
       if (typeof tournament.endDate !== "undefined")
         tmpEndDate = tournament.endDate;
 
-      if (tmpStartDate >= tmpEndDate)
+      if (tmpStartDate >= tmpEndDate) {
+        logger.error("startDate should be before endDate", {
+          fields: {
+            type: "Tournament update",
+            startDate: tmpStartDate,
+            endDate: tmpEndDate,
+          },
+        });
+
         throw new Error("startDate should be before endDate");
+      }
 
       result.startDate = tmpStartDate;
       result.endDate = tmpEndDate;
@@ -170,9 +299,20 @@ module.exports = {
       if (typeof tournament.isOpen !== "undefined")
         result.isOpen = tournament.isOpen;
 
+      logger.info("Tournament update", {
+        fields: logFields,
+      });
+
       try {
         await result.save();
       } catch (saveError) {
+        logger.error(saveError, {
+          fields: {
+            type: "Tournament update",
+            logFields,
+          },
+        });
+
         throw saveError;
       }
 

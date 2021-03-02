@@ -59,10 +59,14 @@ module.exports = {
     async findPlayers(root, { filter }, { user }, info) {
       if (!user) throw new Error("Unauthorized");
 
-      let include = getInclude(info);
+      const include = getInclude(info);
+
+      const logFields = {
+        filter: filter,
+      };
 
       if (typeof filter === "undefined") {
-        logger.debug("Players search");
+        logger.debug("Player search");
 
         try {
           return await Player.findAll({
@@ -71,8 +75,9 @@ module.exports = {
           });
         } catch (findError) {
           logger.error(findError, {
-            fields: { type: "Players search" },
+            fields: { type: "Player search" },
           });
+
           throw findError;
         }
       }
@@ -93,7 +98,7 @@ module.exports = {
         });
       }
 
-      logger.debug("Players search", { fields: { filter: filter } });
+      logger.debug("Player search", { fields: logFields });
 
       try {
         return await Player.findAll({
@@ -105,8 +110,12 @@ module.exports = {
         });
       } catch (findError) {
         logger.error(findError, {
-          fields: { type: "Players search", filter: filter },
+          fields: {
+            type: "Player search",
+            logFields,
+          },
         });
+
         throw findError;
       }
     },
@@ -116,8 +125,12 @@ module.exports = {
     async createPlayer(root, { player }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
+      const logFields = {
+        player: player,
+      };
+
       logger.info("Player creation", {
-        fields: { player: player },
+        fields: logFields,
       });
 
       try {
@@ -129,9 +142,10 @@ module.exports = {
         logger.error(createError, {
           fields: {
             type: "Player creation",
-            player: player,
+            logFields,
           },
         });
+
         throw createError;
       }
     },
@@ -139,16 +153,21 @@ module.exports = {
     async deletePlayer(root, { id }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
 
+      const logFields = {
+        id: id,
+      };
+
       logger.info("Player deletion", {
-        fields: { id: id },
+        fields: logFields,
       });
 
       try {
         return await Player.destroy({ where: { id: id } });
       } catch (deleteError) {
         logger.error(deleteError, {
-          fields: { type: "Players search", id: id },
+          fields: { type: "Player deletion", logFields },
         });
+
         throw deleteError;
       }
     },
@@ -182,6 +201,7 @@ module.exports = {
             logFields,
           },
         });
+
         throw updateError;
       }
     },
