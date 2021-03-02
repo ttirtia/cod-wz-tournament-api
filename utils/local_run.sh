@@ -2,12 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly dir="$(dirname "$(realpath "$0")")"
-cd "$dir/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-readonly env_file=".env"
-. "$env_file"
-export $(grep -E '^[A-Z]' "$env_file" | cut -d= -f1)
+# shellcheck disable=SC1091
+source .env
+# shellcheck disable=SC2046
+export $(grep '^[A-Z]' .env | cut -d '=' -f 1)
 
 docker-compose up -d
 
