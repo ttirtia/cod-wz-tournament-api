@@ -89,8 +89,6 @@ In order to run `node index.js` directly and/or override the default configurati
 
 The PostgreSQL variables let you run the API server against your own database. The defaults target the Docker instance defined in `docker-compose.yml`.
 
-This application only logs in a human-readable format to the console by default. To enable logging to a file in JSON, use the `LOG_FILE` environment variable.
-
 The scripts in the `utils/` directory will load these values from the `.env` file.
 
 ## Database migrations
@@ -118,6 +116,18 @@ At least the following envrionment variables are required:
 * PGUSER="cod-wz-tourney"
 * PGPASSWORD="cod-wz-tourney"
 * PGDATABASE="cod-wz-tourney"
+
+## Logging
+
+This project uses [winston](https://github.com/winstonjs/winston) and [winston-daily-rotate-file](https://github.com/winstonjs/winston-daily-rotate-file) to manage its logs.
+
+By default, messages are written in a human-readable format to the console. In order to enable logging in JSON to a file, set the `LOG_FILE` environment variable (cfr. below).
+
+The following envrionment variables can be used to configure the logging behavior:
+* LOG_LEVEL="info"
+* LOG_FILE=""
+* LOG_MAX_SIZE="10m"
+* LOG_MAX_FILES="7d"
 
 ## Class diagram
 
