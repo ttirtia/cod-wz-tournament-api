@@ -11,7 +11,7 @@ export $(grep -E '^[A-Z]' "$env_file" | cut -d= -f1)
 
 docker-compose up -d
 
-sleep 3
+while ! docker-compose exec db pg_isready &>/dev/null; do sleep 1; done
 
 npx sequelize-cli db:migrate
 
