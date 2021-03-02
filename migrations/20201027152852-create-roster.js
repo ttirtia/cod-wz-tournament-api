@@ -16,8 +16,8 @@ module.exports = {
 
       await queryInterface.sequelize.query(
         `CREATE TABLE players_rosters (
-          player_id      UUID REFERENCES players(id),
-          roster_id      UUID REFERENCES rosters(id),
+          player_id      UUID REFERENCES players(id) ON DELETE CASCADE,
+          roster_id      UUID REFERENCES rosters(id) ON DELETE CASCADE,
           created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
           updated_at     TIMESTAMP WITH TIME ZONE NOT NULL,
           PRIMARY KEY(player_id, roster_id)

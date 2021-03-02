@@ -10,7 +10,7 @@ module.exports = {
           name              TEXT UNIQUE NOT NULL,
           placement         INT,
           team_leader_id    UUID REFERENCES players(id),
-          tournament_id     UUID REFERENCES tournaments(id),
+          tournament_id     UUID REFERENCES tournaments(id) ON DELETE CASCADE,
           created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
           updated_at        TIMESTAMP WITH TIME ZONE NOT NULL
         );`,
@@ -19,8 +19,8 @@ module.exports = {
 
       await queryInterface.sequelize.query(
         `CREATE TABLE players_teams (
-          player_id      UUID REFERENCES players(id),
-          team_id        UUID REFERENCES teams(id),
+          player_id      UUID REFERENCES players(id) ON DELETE CASCADE,
+          team_id        UUID REFERENCES teams(id) ON DELETE CASCADE,
           created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
           updated_at     TIMESTAMP WITH TIME ZONE NOT NULL,
           PRIMARY KEY(player_id, team_id)
