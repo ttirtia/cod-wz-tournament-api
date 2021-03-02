@@ -38,13 +38,13 @@ In another shell, run:
 
 4. Test the playground
 
-Go to http://localhost:8888/graphql (or http://localhost:${SERVER_PORT}/graphql)
+Go to http://localhost:8888/graphql (or http://localhost:$SERVER_PORT/graphql)
 
 Login with the following mutation:
 
 ```graphql
 mutation {
-  login(email: "${ADMIN_EMAIL}", password: "${ADMIN_PASSWORD}")
+  login(email: "$ADMIN_EMAIL", password: "$ADMIN_PASSWORD")
 }
 ```
 
@@ -54,7 +54,7 @@ Click on `HTTP HEADERS` in the lower left corner of the playground and add:
 
 ```graphql
 {
-  "Authorization": "Bearer ${JWT_TOKEN}"
+  "Authorization": "Bearer $JWT_TOKEN"
 }
 ```
 
@@ -89,7 +89,7 @@ In order to run `node index.js` directly and/or override the default configurati
 
 The PostgreSQL variables let you run the API server against your own database. The defaults target the Docker instance defined in `docker-compose.yml`.
 
-This application only logs to the console by default. To enable logging to a file, use the `LOG_FILE` environment variable.
+This application only logs in a human-readable format to the console by default. To enable logging to a file in JSON, use the `LOG_FILE` environment variable.
 
 The scripts in the `utils/` directory will load these values from the `.env` file.
 
@@ -100,10 +100,10 @@ This project uses [sequelize](https://sequelize.org/master/) to manage database 
 In order to create a new migration, run:
 
 ```bash
-npx sequelize-cli migration:generate --name ${MIGRATION_NAME}
+npx sequelize-cli migration:generate --name $MIGRATION_NAME
 ```
 
-Then edit the newly created SQL file: `migrations/*-${MIGRATION_NAME}.js`
+Then edit the newly created SQL file: `migrations/*-$MIGRATION_NAME.js`
 
 Refer to the [documentation](https://sequelize.org/master/manual/migrations.html) to learn how to write a migration.
 
