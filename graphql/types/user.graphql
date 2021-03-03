@@ -1,7 +1,6 @@
 type User {
   id: ID!
   username: String!
-  email: String!
   password: String!
   isAdmin: Boolean!
   createdAt: Date!
@@ -9,13 +8,12 @@ type User {
 }
 
 type Mutation {
-  login(email: String!, password: String!): String!
+  login(username: String!, password: String!): String!
 }
 
 input UserFilter {
   id: ID
   username: String
-  email: String
   isAdmin: Boolean
 }
 

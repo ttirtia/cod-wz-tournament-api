@@ -47,12 +47,6 @@ module.exports = {
         });
       }
 
-      if (typeof filter.email !== "undefined") {
-        queryFilter.push({
-          email: { [Op.iLike]: "%" + filter.email + "%" },
-        });
-      }
-
       if (typeof filter.isAdmin !== "undefined") {
         queryFilter.push({
           isAdmin: { [Op.eq]: filter.isAdmin },
@@ -83,14 +77,14 @@ module.exports = {
   },
 
   Mutation: {
-    async login(root, { email, password }, { user }, info) {
+    async login(root, { username, password }, { user }, info) {
       if (user) throw new Error("Already logged in");
 
       const logFields = {
-        email: email,
+        username: username,
       };
 
-      const res = await User.findOne({ where: { email: email } });
+      const res = await User.findOne({ where: { username: username } });
       if (res === null) {
         logger.error("Unable to login - user not found", {
           fields: {
@@ -120,7 +114,6 @@ module.exports = {
         {
           id: res.id,
           username: res.username,
-          email: res.email,
           isAdmin: res.isAdmin,
         },
         process.env.JWT_SIGNING_KEY,
