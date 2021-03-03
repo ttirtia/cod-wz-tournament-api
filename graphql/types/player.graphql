@@ -1,7 +1,6 @@
 type Player {
   id: ID!
   name: String!
-  activisionId: String!
   rosters: [Roster]
   teams: [Team]
   teamLeaderships: [Team]
@@ -11,18 +10,15 @@ type Player {
 
 input CreatePlayerInput {
   name: String!
-  activisionId: String!
 }
 
 input UpdatePlayerInput {
   name: String
-  activisionId: String
 }
 
 input PlayerFilter {
   id: ID
   name: String
-  activisionId: String
 }
 
 type Mutation {
