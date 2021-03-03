@@ -13,7 +13,15 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      let playerAssociation = User.belongsToMany(models.Player, {
+        as: "player",
+        through: "players_users",
+        foreignKey: "user_id",
+        otherKey: "player_id",
+      });
+
+      playerAssociation.isMultiAssociation = false;
+      playerAssociation.isSingleAssociation = true;
     }
   }
   User.init(

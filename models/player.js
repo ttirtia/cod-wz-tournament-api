@@ -23,6 +23,16 @@ module.exports = (sequelize, DataTypes) => {
         as: "teamLeaderships",
         foreignKey: "team_leader_id",
       });
+
+      let userAssociation = Player.belongsToMany(models.User, {
+        as: "user",
+        through: "players_users",
+        foreignKey: "player_id",
+        otherKey: "user_id",
+      });
+
+      userAssociation.isMultiAssociation = false;
+      userAssociation.isSingleAssociation = true;
     }
   }
   Player.init(

@@ -3,6 +3,7 @@ type User {
   username: String!
   password: String!
   isAdmin: Boolean!
+  player: Player
   createdAt: Date!
   updatedAt: Date
 }

@@ -54,6 +54,12 @@ classDiagram
     +getResult() int
   }
 
+  class User {
+    +String name
+    +String password
+    +bool isAdmin
+  }
+
   Tournament "1..*" o-- "1" Roster
   Tournament "1..*" o-- "1" PointsCalculationRule
   Tournament "1" *-- "1..*" Team
@@ -63,3 +69,4 @@ classDiagram
   Game "1" *-- "1..*" PlayerResult
   PlayerResult "1..*" o-- "1" Player
   PointsCalculationRule "1" *-- "0..2" PointsCalculationRule
+  Player "0..1" o-- "0..1" User

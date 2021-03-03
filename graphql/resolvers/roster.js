@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Roster, Player } = require("../../models");
+const { Roster, Player, sequelize } = require("../../models");
 
 const logger = require("../../logger");
 

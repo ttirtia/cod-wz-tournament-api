@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { User } = require("../../models");
+const { User, Player, sequelize } = require("../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -9,10 +9,31 @@ const logger = require("../../logger");
 
 const JWT_TOKEN_TIMEOUT = "1d";
 
+const PLAYER_INCLUDE = {
+  model: Player,
+  as: "player",
+};
+
+// Avoid eager-loading if possible
+function getInclude(info) {
+  let include = [];
+
+  if (
+    info.fieldNodes[0].selectionSet.selections.find(
+      (field) => field.name.value === "player"
+    )
+  )
+    include.push(PLAYER_INCLUDE);
+
+  return include;
+}
+
 module.exports = {
   Query: {
     async findUsers(root, { filter }, { user }, info) {
       if (!user || !user.isAdmin) throw new Error("Unauthorized");
+
+      const include = getInclude(info);
 
       const logFields = {
         filter: filter,
@@ -24,7 +45,7 @@ module.exports = {
         try {
           return await User.findAll({
             order: [["username", "ASC"]],
-            raw: true,
+            include: include,
           });
         } catch (findError) {
           logger.error(findError, {
@@ -61,7 +82,7 @@ module.exports = {
             [Op.and]: queryFilter,
           },
           order: [["username", "ASC"]],
-          raw: true,
+          include: include,
         });
       } catch (findError) {
         logger.error(findError, {
