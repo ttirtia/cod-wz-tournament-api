@@ -92,12 +92,6 @@ module.exports = {
         queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
       }
 
-      if (typeof filter.activisionId !== "undefined") {
-        queryFilter.push({
-          activisionId: { [Op.iLike]: "%" + filter.activisionId + "%" },
-        });
-      }
-
       logger.debug("Player search", { fields: logFields });
 
       try {
@@ -136,7 +130,6 @@ module.exports = {
       try {
         return await Player.create({
           name: player.name,
-          activisionId: player.activisionId,
         });
       } catch (createError) {
         logger.error(createError, {
@@ -188,7 +181,6 @@ module.exports = {
         const [numberOfAffectedRows, affectedRows] = await Player.update(
           {
             name: player.name,
-            activisionId: player.activisionId,
           },
           { where: { id: id }, returning: true, plain: true }
         );

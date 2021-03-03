@@ -8,7 +8,6 @@ module.exports = {
         `CREATE TABLE players (
           id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           name           TEXT UNIQUE NOT NULL,
-          activision_id  TEXT UNIQUE NOT NULL,
           created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
           updated_at     TIMESTAMP WITH TIME ZONE NOT NULL
         );`,

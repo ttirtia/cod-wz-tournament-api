@@ -38,11 +38,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
-      activisionId: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-        unique: true,
-      },
     },
     {
       sequelize,
