@@ -9,7 +9,7 @@ module.exports = {
           id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           name              TEXT UNIQUE NOT NULL,
           placement         INT,
-          team_leader_id    UUID REFERENCES players(id),
+          team_leader_id    UUID REFERENCES players(id) ON DELETE SET NULL,
           tournament_id     UUID REFERENCES tournaments(id) ON DELETE CASCADE,
           created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
           updated_at        TIMESTAMP WITH TIME ZONE NOT NULL
