@@ -12,7 +12,7 @@ module.exports = {
           end_date       TIMESTAMP WITH TIME ZONE NOT NULL,
           game_limit     INT NOT NULL DEFAULT -1,
           is_open        BOOLEAN NOT NULL DEFAULT true,
-          roster_id      UUID REFERENCES rosters(id),
+          roster_id      UUID REFERENCES rosters(id) ON DELETE SET NULL,
           created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
           updated_at     TIMESTAMP WITH TIME ZONE NOT NULL
         );`,
