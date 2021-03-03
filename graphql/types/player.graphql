@@ -4,16 +4,19 @@ type Player {
   rosters: [Roster]
   teams: [Team]
   teamLeaderships: [Team]
+  user: User
   createdAt: Date!
   updatedAt: Date
 }
 
 input CreatePlayerInput {
   name: String!
+  user: String
 }
 
 input UpdatePlayerInput {
   name: String
+  user: String
 }
 
 input PlayerFilter {

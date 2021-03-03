@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Team, Player, Tournament } = require("../../models");
+const { Team, Player, Tournament, sequelize } = require("../../models");
 
 const logger = require("../../logger");
 
@@ -231,7 +231,7 @@ module.exports = {
 
       await setPlayers(result, team.players);
       await setTeamLeader(result, team.teamLeader);
-      return setTournament(result, team.tournament);
+      return await setTournament(result, team.tournament);
     },
 
     async deleteTeam(root, { id }, { user }, info) {
