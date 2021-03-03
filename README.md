@@ -44,7 +44,7 @@ Login with the following mutation:
 
 ```graphql
 mutation {
-  login(email: "$ADMIN_EMAIL", password: "$ADMIN_PASSWORD")
+  login(username: "$ADMIN_USERNAME", password: "$ADMIN_PASSWORD")
 }
 ```
 
@@ -64,7 +64,6 @@ You may now run queries:
 query {
   findUsers {
     username
-    email
   }
 }
 ```
