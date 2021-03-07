@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
-set -Eeuo pipefail
+readonly dir="$(realpath "$(dirname "$0")")/.."
 
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(realpath "$(dirname "$0")")/.." || exit
 
-# shellcheck disable=SC1091
-source .env
+# shellcheck disable=SC1090
+. "$dir/.env"
 # shellcheck disable=SC2046
 export $(grep '^[A-Z]' .env | cut -d '=' -f 1)
 
