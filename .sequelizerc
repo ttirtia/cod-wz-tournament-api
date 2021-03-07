@@ -3,6 +3,6 @@
 const path = require("path");
 
 module.exports = {
-  env: process.env.NODE_ENV,
+  env: process.env.NODE_ENV || "dev",
   config: path.resolve("config", "config.js"),
 };

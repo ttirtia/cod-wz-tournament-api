@@ -6,7 +6,29 @@ services:
     container_name: cod-wz-tournament-database
     ports:
       - "${PGPORT:-5432}:5432"
+    expose:
+      - "5432"
     environment:
       POSTGRES_USER: "${PGUSER:-cod-wz-tourney}"
       POSTGRES_PASSWORD: "${PGPASSWORD:-cod-wz-tourney}"
       POSTGRES_DB: "${PGDATABASE:-cod-wz-tourney}"
+    networks:
+      - "cod-wz-tournament-api"
+
+  app:
+    build: .
+    container_name: cod-wz-tournament-application
+    ports:
+      - "${SERVER_PORT:-8888}:${SERVER_PORT:-8888}"
+    environment:
+      NODE_ENV: "${NODE_ENV:-dev}"
+      PGUSER: "${PGUSER:-cod-wz-tourney}"
+      PGPASSWORD: "${PGPASSWORD:-cod-wz-tourney}"
+      PGDATABASE: "${PGDATABASE:-cod-wz-tourney}"
+      PGHOST: "db"
+      JWT_SIGNING_KEY: "supersecret"
+    networks:
+      - "cod-wz-tournament-api"
+
+networks:
+  cod-wz-tournament-api:

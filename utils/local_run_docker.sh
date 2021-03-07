@@ -14,6 +14,6 @@ docker-compose up -d db
 echo "Waiting for database to start..."
 while ! docker-compose exec db pg_isready -U "$PGUSER" 1>/dev/null 2>&1; do sleep 1; done
 
-npx sequelize-cli db:migrate
+docker-compose up -d app
 
-node index.js
+docker-compose exec app npx sequelize-cli db:migrate
