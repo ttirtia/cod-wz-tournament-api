@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>index.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="../docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="../graphql/resolvers/date.html">
+                  graphql/resolvers/date.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/player.html">
+                  graphql/resolvers/player.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/roster.html">
+                  graphql/resolvers/roster.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/team.html">
+                  graphql/resolvers/team.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/tournament.html">
+                  graphql/resolvers/tournament.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/user.html">
+                  graphql/resolvers/user.js
+                </a>
+              
+                
+                <a class="source" href="../index.html">
+                  index.js
+                </a>
+              
+                
+                <a class="source" href="../logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="index.html">
+                  models/index.js
+                </a>
+              
+                
+                <a class="source" href="player.html">
+                  models/player.js
+                </a>
+              
+                
+                <a class="source" href="roster.html">
+                  models/roster.js
+                </a>
+              
+                
+                <a class="source" href="team.html">
+                  models/team.js
+                </a>
+              
+                
+                <a class="source" href="tournament.html">
+                  models/tournament.js
+                </a>
+              
+                
+                <a class="source" href="user.html">
+                  models/user.js
+                </a>
+              
+                
+                <a class="source" href="../server.html">
+                  server.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>index.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
+
+<span class="hljs-keyword">const</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;fs&quot;</span>);
+<span class="hljs-keyword">const</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;path&quot;</span>);
+<span class="hljs-keyword">const</span> Sequelize = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
+<span class="hljs-keyword">const</span> basename = path.basename(__filename);
+<span class="hljs-keyword">const</span> env = process.env.NODE_ENV || <span class="hljs-string">&quot;dev&quot;</span>;
+<span class="hljs-keyword">const</span> config = <span class="hljs-built_in">require</span>(__dirname + <span class="hljs-string">&quot;/../config/config.js&quot;</span>)[env];
+<span class="hljs-keyword">const</span> db = {};
+
+<span class="hljs-keyword">let</span> sequelize;
+<span class="hljs-keyword">if</span> (config.use_env_variable) {
+  sequelize = <span class="hljs-keyword">new</span> Sequelize(process.env[config.use_env_variable], config);
+} <span class="hljs-keyword">else</span> {
+  sequelize = <span class="hljs-keyword">new</span> Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    config
+  );
+}
+
+fs.readdirSync(__dirname)
+  .filter(<span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> {
+    <span class="hljs-keyword">return</span> (
+      file.indexOf(<span class="hljs-string">&quot;.&quot;</span>) !== <span class="hljs-number">0</span> &amp;&amp; file !== basename &amp;&amp; file.slice(-<span class="hljs-number">3</span>) === <span class="hljs-string">&quot;.js&quot;</span>
+    );
+  })
+  .forEach(<span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> model = <span class="hljs-built_in">require</span>(path.join(__dirname, file))(
+      sequelize,
+      Sequelize.DataTypes
+    );
+    db[model.name] = model;
+  });
+
+<span class="hljs-built_in">Object</span>.keys(db).forEach(<span class="hljs-function">(<span class="hljs-params">modelName</span>) =&gt;</span> {
+  <span class="hljs-keyword">if</span> (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+<span class="hljs-built_in">module</span>.exports = db;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

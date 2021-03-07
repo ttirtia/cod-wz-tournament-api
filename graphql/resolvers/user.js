@@ -9,139 +9,204 @@ const logger = require("../../logger");
 
 const JWT_TOKEN_TIMEOUT = "1d";
 
-const PLAYER_INCLUDE = {
-  model: Player,
-  as: "player",
-};
-
-// Avoid eager-loading if possible
+// Avoid eager-loading the associations if possible
 function getInclude(info) {
   let include = [];
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "player"
-    )
-  )
-    include.push(PLAYER_INCLUDE);
+  info.fieldNodes[0].selectionSet.selections.forEach((field) => {
+    if (field.name.value === "player") {
+      include.push({ model: Player, as: "player" });
+      return;
+    }
+  });
 
   return include;
 }
 
+// Build the query filter based on provided fields
+function getFilter(filter) {
+  let queryFilter = [];
+
+  if (typeof filter.id !== "undefined") {
+    queryFilter.push({ id: { [Op.eq]: filter.id } });
+  }
+
+  if (typeof filter.username !== "undefined") {
+    queryFilter.push({
+      username: { [Op.iLike]: "%" + filter.username + "%" },
+    });
+  }
+
+  if (typeof filter.isAdmin !== "undefined") {
+    queryFilter.push({
+      isAdmin: { [Op.eq]: filter.isAdmin },
+    });
+  }
+
+  return queryFilter;
+}
+
+//  #### Description
+//    Associate a player to the user
+//
+//  #### Parameters
+//    * user: the user for which to set the related player
+//    * player: player id to link to the user
+//    * transation: the related database transaction
+//
+//  #### Returns
+//    * user: the user updated with its player
+async function setPlayer(user, player, transaction) {
+  if (typeof player === "undefined") return user;
+
+  const logFields = { user, player };
+
+  try {
+    await user.setPlayer(await Player.findByPk(player), { transaction });
+  } catch (setPlayerError) {
+    logFields.type = "User setPlayer";
+    logger.error(setPlayerError, { logFields });
+    throw setPlayerError;
+  }
+
+  return user;
+}
+
 module.exports = {
   Query: {
-    async findUsers(root, { filter }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Find all users or some users based on filter
+    //
+    //  #### Parameters
+    //    * filter: criteria to use when searching for users
+    //
+    //  #### Returns
+    //    * findUsers: the list of users with matching criteria or all users if the filter is not defined
+    async findUsers(root, { filter }, { authUser }, info) {
+      if (!authUser) throw new Error("Unauthorized");
 
       const include = getInclude(info);
+      const order = [["username", "ASC"]];
 
-      const logFields = {
-        filter: filter,
-      };
+      let logFields = null;
+      let where = null;
 
-      if (typeof filter === "undefined") {
-        logger.debug("User search");
-
-        try {
-          return await User.findAll({
-            order: [["username", "ASC"]],
-            include: include,
-          });
-        } catch (findError) {
-          logger.error(findError, {
-            fields: { type: "User search" },
-          });
-
-          throw findError;
-        }
+      if (typeof filter !== "undefined") {
+        where = { [Op.and]: getFilter(filter) };
+        logFields = { filter };
       }
 
-      let queryFilter = [];
-
-      if (typeof filter.id !== "undefined") {
-        queryFilter.push({ id: { [Op.eq]: filter.id } });
-      }
-
-      if (typeof filter.username !== "undefined") {
-        queryFilter.push({
-          username: { [Op.iLike]: "%" + filter.username + "%" },
-        });
-      }
-
-      if (typeof filter.isAdmin !== "undefined") {
-        queryFilter.push({
-          isAdmin: { [Op.eq]: filter.isAdmin },
-        });
-      }
-
-      logger.debug("User search", { fields: logFields });
+      logger.debug("User search", { logFields });
 
       try {
-        return await User.findAll({
-          where: {
-            [Op.and]: queryFilter,
-          },
-          order: [["username", "ASC"]],
-          include: include,
-        });
+        return await User.findAll({ where, order, include });
       } catch (findError) {
-        logger.error(findError, {
-          fields: {
-            type: "User search",
-            logFields,
-          },
-        });
-
+        if (logFields === null) logFields = {};
+        logFields.type = "User search";
+        logger.error(findError, { logFields });
         throw findError;
       }
     },
   },
 
   Mutation: {
-    async login(root, { username, password }, { user }, info) {
-      if (user) throw new Error("Already logged in");
+    //  #### Description
+    //    Login using a user's credentials
+    //
+    //  #### Parameters
+    //    * username: the user's username
+    //    * password: the user's password
+    //
+    //  #### Returns
+    //    * login: a signed JWT token that can be used for further requests
+    async login(root, { username, password }, { authUser }, info) {
+      if (authUser) throw new Error("Already logged in");
 
-      const logFields = {
-        username: username,
-      };
+      const logFields = { username };
 
-      const res = await User.findOne({ where: { username: username } });
-      if (res === null) {
-        logger.error("Unable to login - user not found", {
-          fields: {
-            type: "User login",
-            logFields,
-          },
-        });
-
+      const result = await User.findOne({ where: { username } });
+      if (result === null) {
+        logFields.type = "User login";
+        logger.error("Unable to login - user not found", { logFields });
         throw new Error("Unable to login");
       }
 
-      const isMatch = bcrypt.compareSync(password, res.password);
+      const isMatch = bcrypt.compareSync(password, result.password);
       if (!isMatch) {
-        logger.error("Unable to login - wrong password", {
-          fields: {
-            type: "User login",
-            logFields,
-          },
-        });
-
+        logFields.type = "User login";
+        logger.error("Unable to login - wrong password", { logFields });
         throw new Error("Unable to login");
       }
 
-      logger.debug("User login", { fields: logFields });
+      logger.debug("User login", { logFields });
 
       return jwt.sign(
         {
-          id: res.id,
-          username: res.username,
-          isAdmin: res.isAdmin,
+          id: result.id,
+          username: result.username,
+          isAdmin: result.isAdmin,
         },
         process.env.JWT_SIGNING_KEY,
-        {
-          expiresIn: JWT_TOKEN_TIMEOUT,
-        }
+        { expiresIn: JWT_TOKEN_TIMEOUT }
       );
+    },
+
+    //  #### Description
+    //    Update an existing user
+    //
+    //  #### Parameters
+    //    * id: the user id
+    //    * user: object composed of attributes/values to update
+    //
+    //  #### Returns
+    //    * updateUser: the updated user
+    async updateUser(root, { id, user }, { authUser }, info) {
+      if (!authUser || (!authUser.isAdmin && id != authUser.id))
+        throw new Error("Unauthorized");
+
+      const include = getInclude(info);
+      const logFields = { id, user };
+
+      let result = await User.findByPk(id, { include });
+
+      if (result === null) {
+        logFields.type = "User update - user not found";
+        logger.error("User update - user not found", { logFields });
+        throw new Error("User not found");
+      }
+
+      logger.info("User update", { logFields });
+
+      // We need to map these by hand and use the `save()` function
+      // because for some reason the object return by `User.update()`
+      // manages the Player association like an array
+      // which means the response would always have a null `player` field
+      if (typeof user.username !== "undefined") result.username = user.username;
+      if (typeof user.password !== "undefined") result.password = user.password;
+      if (typeof user.isAdmin !== "undefined") result.isAdmin = user.isAdmin;
+
+      const transaction = await sequelize.transaction();
+
+      try {
+        await result.save({ transaction });
+      } catch (updateError) {
+        await transaction.rollback();
+        logFields.type = "User update";
+        logger.error(updateError, { logFields });
+        throw updateError;
+      }
+
+      try {
+        await setPlayer(result, user.player, transaction);
+      } catch (associationsError) {
+        await transaction.rollback();
+        throw associationsError;
+      }
+
+      await transaction.commit();
+
+      // `.reload()` is needed otherwise the instance would not be up-to-date
+      return result.reload();
     },
   },
 };

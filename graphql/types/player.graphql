@@ -11,12 +11,10 @@ type Player {
 
 input CreatePlayerInput {
   name: String!
-  user: String
 }
 
 input UpdatePlayerInput {
   name: String
-  user: String
 }
 
 input PlayerFilter {

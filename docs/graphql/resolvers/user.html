@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>user.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="../../docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="date.html">
+                  graphql/resolvers/date.js
+                </a>
+              
+                
+                <a class="source" href="player.html">
+                  graphql/resolvers/player.js
+                </a>
+              
+                
+                <a class="source" href="roster.html">
+                  graphql/resolvers/roster.js
+                </a>
+              
+                
+                <a class="source" href="team.html">
+                  graphql/resolvers/team.js
+                </a>
+              
+                
+                <a class="source" href="tournament.html">
+                  graphql/resolvers/tournament.js
+                </a>
+              
+                
+                <a class="source" href="user.html">
+                  graphql/resolvers/user.js
+                </a>
+              
+                
+                <a class="source" href="../../index.html">
+                  index.js
+                </a>
+              
+                
+                <a class="source" href="../../logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="../../models/index.html">
+                  models/index.js
+                </a>
+              
+                
+                <a class="source" href="../../models/player.html">
+                  models/player.js
+                </a>
+              
+                
+                <a class="source" href="../../models/roster.html">
+                  models/roster.js
+                </a>
+              
+                
+                <a class="source" href="../../models/team.html">
+                  models/team.js
+                </a>
+              
+                
+                <a class="source" href="../../models/tournament.html">
+                  models/tournament.js
+                </a>
+              
+                
+                <a class="source" href="../../models/user.html">
+                  models/user.js
+                </a>
+              
+                
+                <a class="source" href="../../server.html">
+                  server.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>user.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
+
+<span class="hljs-keyword">const</span> { Op } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
+<span class="hljs-keyword">const</span> { User, Player, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
+<span class="hljs-keyword">const</span> bcrypt = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;bcrypt&quot;</span>);
+<span class="hljs-keyword">const</span> jwt = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;jsonwebtoken&quot;</span>);
+
+<span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);
+
+<span class="hljs-keyword">const</span> JWT_TOKEN_TIMEOUT = <span class="hljs-string">&quot;1d&quot;</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-2">&#x00a7;</a>
+              </div>
+              <p>Avoid eager-loading the associations if possible</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getInclude</span>(<span class="hljs-params">info</span>) </span>{
+  <span class="hljs-keyword">let</span> include = [];
+
+  info.fieldNodes[<span class="hljs-number">0</span>].selectionSet.selections.forEach(<span class="hljs-function">(<span class="hljs-params">field</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;player&quot;</span>) {
+      include.push({ <span class="hljs-attr">model</span>: Player, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span> });
+      <span class="hljs-keyword">return</span>;
+    }
+  });
+
+  <span class="hljs-keyword">return</span> include;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-3">&#x00a7;</a>
+              </div>
+              <p>Build the query filter based on provided fields</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFilter</span>(<span class="hljs-params">filter</span>) </span>{
+  <span class="hljs-keyword">let</span> queryFilter = [];
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter.id !== <span class="hljs-string">&quot;undefined&quot;</span>) {
+    queryFilter.push({ <span class="hljs-attr">id</span>: { [Op.eq]: filter.id } });
+  }
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter.username !== <span class="hljs-string">&quot;undefined&quot;</span>) {
+    queryFilter.push({
+      <span class="hljs-attr">username</span>: { [Op.iLike]: <span class="hljs-string">&quot;%&quot;</span> + filter.username + <span class="hljs-string">&quot;%&quot;</span> },
+    });
+  }
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter.isAdmin !== <span class="hljs-string">&quot;undefined&quot;</span>) {
+    queryFilter.push({
+      <span class="hljs-attr">isAdmin</span>: { [Op.eq]: filter.isAdmin },
+    });
+  }
+
+  <span class="hljs-keyword">return</span> queryFilter;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-4">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
+<p>   Associate a player to the user</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>user: the user for which to set the related player</li>
+<li>player: player id to link to the user</li>
+<li>transation: the related database transaction</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>user: the user updated with its player</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setPlayer</span>(<span class="hljs-params">user, player, transaction</span>) </span>{
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> player === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> user;
+
+  <span class="hljs-keyword">const</span> logFields = { user, player };
+
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> user.setPlayer(<span class="hljs-keyword">await</span> Player.findByPk(player), { transaction });
+  } <span class="hljs-keyword">catch</span> (setPlayerError) {
+    logFields.type = <span class="hljs-string">&quot;User setPlayer&quot;</span>;
+    logger.error(setPlayerError, { logFields });
+    <span class="hljs-keyword">throw</span> setPlayerError;
+  }
+
+  <span class="hljs-keyword">return</span> user;
+}
+
+<span class="hljs-built_in">module</span>.exports = {
+  <span class="hljs-attr">Query</span>: {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-5">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
+<p>   Find all users or some users based on filter</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>filter: criteria to use when searching for users</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>findUsers: the list of users with matching criteria or all users if the filter is not defined</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">findUsers</span>(<span class="hljs-params">root, { filter }, { authUser }, info</span>)</span> {
+      <span class="hljs-keyword">if</span> (!authUser) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
+
+      <span class="hljs-keyword">const</span> include = getInclude(info);
+      <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;username&quot;</span>, <span class="hljs-string">&quot;ASC&quot;</span>]];
+
+      <span class="hljs-keyword">let</span> logFields = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">let</span> where = <span class="hljs-literal">null</span>;
+
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter !== <span class="hljs-string">&quot;undefined&quot;</span>) {
+        where = { [Op.and]: getFilter(filter) };
+        logFields = { filter };
+      }
+
+      logger.debug(<span class="hljs-string">&quot;User search&quot;</span>, { logFields });
+
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> User.findAll({ where, order, include });
+      } <span class="hljs-keyword">catch</span> (findError) {
+        <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
+        logFields.type = <span class="hljs-string">&quot;User search&quot;</span>;
+        logger.error(findError, { logFields });
+        <span class="hljs-keyword">throw</span> findError;
+      }
+    },
+  },
+
+  <span class="hljs-attr">Mutation</span>: {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-6">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
+<p>   Login using a user’s credentials</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>username: the user’s username</li>
+<li>password: the user’s password</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>login: a signed JWT token that can be used for further requests</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">login</span>(<span class="hljs-params">root, { username, password }, { authUser }, info</span>)</span> {
+      <span class="hljs-keyword">if</span> (authUser) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Already logged in&quot;</span>);
+
+      <span class="hljs-keyword">const</span> logFields = { username };
+
+      <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> User.findOne({ <span class="hljs-attr">where</span>: { username } });
+      <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
+        logFields.type = <span class="hljs-string">&quot;User login&quot;</span>;
+        logger.error(<span class="hljs-string">&quot;Unable to login - user not found&quot;</span>, { logFields });
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unable to login&quot;</span>);
+      }
+
+      <span class="hljs-keyword">const</span> isMatch = bcrypt.compareSync(password, result.password);
+      <span class="hljs-keyword">if</span> (!isMatch) {
+        logFields.type = <span class="hljs-string">&quot;User login&quot;</span>;
+        logger.error(<span class="hljs-string">&quot;Unable to login - wrong password&quot;</span>, { logFields });
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unable to login&quot;</span>);
+      }
+
+      logger.debug(<span class="hljs-string">&quot;User login&quot;</span>, { <span class="hljs-attr">fields</span>: logFields });
+
+      <span class="hljs-keyword">return</span> jwt.sign(
+        {
+          <span class="hljs-attr">id</span>: result.id,
+          <span class="hljs-attr">username</span>: result.username,
+          <span class="hljs-attr">isAdmin</span>: result.isAdmin,
+        },
+        process.env.JWT_SIGNING_KEY,
+        { <span class="hljs-attr">expiresIn</span>: JWT_TOKEN_TIMEOUT }
+      );
+    },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-7">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
+<p>   Update an existing user</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>id: the user id</li>
+<li>user: object composed of attributes/values to update</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>updateUser: the updated user</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">updateUser</span>(<span class="hljs-params">root, { id, user }, { authUser }, info</span>)</span> {
+      <span class="hljs-keyword">if</span> (!authUser || (!authUser.isAdmin &amp;&amp; id != authUser.id))
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
+
+      <span class="hljs-keyword">const</span> include = getInclude(info);
+      <span class="hljs-keyword">const</span> logFields = { id, user };
+
+      <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> User.findByPk(id, { include });
+
+      <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
+        logFields.type = <span class="hljs-string">&quot;User update - user not found&quot;</span>;
+        logger.error(<span class="hljs-string">&quot;User update - user not found&quot;</span>, { logFields });
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;User not found&quot;</span>);
+      }
+
+      logger.info(<span class="hljs-string">&quot;User update&quot;</span>, { logFields });</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-8">&#x00a7;</a>
+              </div>
+              <p>We need to map these by hand and use the <code>save()</code> function
+because for some reason the object return by <code>User.update()</code>
+manages the Player association like an array
+which means the response would always have a null <code>player</code> field</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.username !== <span class="hljs-string">&quot;undefined&quot;</span>) result.username = user.username;
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.password !== <span class="hljs-string">&quot;undefined&quot;</span>) result.password = user.password;
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.isAdmin !== <span class="hljs-string">&quot;undefined&quot;</span>) result.isAdmin = user.isAdmin;
+
+      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
+
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">await</span> result.save({ transaction });
+      } <span class="hljs-keyword">catch</span> (updateError) {
+        <span class="hljs-keyword">await</span> transaction.rollback();
+        logFields.type = <span class="hljs-string">&quot;User update&quot;</span>;
+        logger.error(updateError, { logFields });
+        <span class="hljs-keyword">throw</span> updateError;
+      }
+
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">await</span> setPlayer(result, user.player, transaction);
+      } <span class="hljs-keyword">catch</span> (associationsError) {
+        <span class="hljs-keyword">await</span> transaction.rollback();
+        <span class="hljs-keyword">throw</span> associationsError;
+      }
+
+      <span class="hljs-keyword">await</span> transaction.commit();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-9">&#x00a7;</a>
+              </div>
+              <p><code>.reload()</code> is needed otherwise the instance would not be up-to-date</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> result.reload();
+    },
+  },
+};</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

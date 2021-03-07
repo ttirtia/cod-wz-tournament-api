@@ -28,13 +28,13 @@ prompt.get(schema, async (promptError, result) => {
     console.error(promptError);
   } else {
     try {
-      const admin = await User.create({
+      await User.create({
         username: result.username,
         password: result.password,
         isAdmin: true,
       });
 
-      console.log("Created user " + admin.username);
+      console.log("Created user " + result.username);
     } catch (createError) {
       console.error(createError);
     }

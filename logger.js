@@ -29,8 +29,8 @@ const logger = createLogger({
             info.errors.forEach((error) => (result += ` - ${error.message}`));
 
           // Log additional fields if any
-          if (typeof info.fields !== "undefined")
-            result += ` (${JSON.stringify(info.fields)})`;
+          if (typeof info.logFields !== "undefined" && info.logFields !== null)
+            result += ` (${JSON.stringify(info.logFields)})`;
 
           return result;
         })

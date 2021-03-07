@@ -1,292 +1,187 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Player, Roster, Team, User, sequelize } = require("../../models");
+const { Player, Roster, Team, User } = require("../../models");
 
 const logger = require("../../logger");
 
-const ROSTER_INCLUDE = {
-  model: Roster,
-  as: "rosters",
-  through: {
-    attributes: [],
-  },
-};
-
-const TEAM_INCLUDE = {
-  model: Team,
-  as: "teams",
-  through: {
-    attributes: [],
-  },
-};
-
-const TEAM_LEADER_INCLUDE = {
-  model: Team,
-  as: "teamLeaderships",
-};
-
-const USER_INCLUDE = {
-  model: User,
-  as: "user",
-};
-
-// Avoid eager-loading if possible
+// Avoid eager-loading the associations if possible
 function getInclude(info) {
   let include = [];
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "rosters"
-    )
-  )
-    include.push(ROSTER_INCLUDE);
+  info.fieldNodes[0].selectionSet.selections.forEach((field) => {
+    if (field.name.value === "rosters") {
+      include.push({
+        model: Roster,
+        as: "rosters",
+        through: { attributes: [] },
+      });
+      return;
+    }
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "teams"
-    )
-  )
-    include.push(TEAM_INCLUDE);
+    if (field.name.value === "teams") {
+      include.push({
+        model: Team,
+        as: "teams",
+        through: { attributes: [] },
+      });
+      return;
+    }
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "teamLeaderships"
-    )
-  )
-    include.push(TEAM_LEADER_INCLUDE);
+    if (field.name.value === "teamLeaderships") {
+      include.push({ model: Team, as: "teamLeaderships" });
+      return;
+    }
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "user"
-    )
-  )
-    include.push(USER_INCLUDE);
+    if (field.name.value === "user") {
+      include.push({ model: User, as: "user" });
+      return;
+    }
+  });
 
   return include;
 }
 
-async function setUser(player, user, transaction) {
-  if (typeof user === "undefined") return player;
+// Build the query filter based on provided fields
+function getFilter(filter) {
+  let queryFilter = [];
 
-  const logFields = {
-    player: player,
-    user: user,
-  };
-
-  try {
-    user = await player.setUser(await User.findByPk(user));
-  } catch (setUserError) {
-    transaction.rollback();
-
-    logger.error(setUserError, {
-      fields: {
-        type: "Player setTournament",
-        logFields,
-      },
-    });
-
-    throw setUserError;
+  if (typeof filter.id !== "undefined") {
+    queryFilter.push({ id: { [Op.eq]: filter.id } });
   }
 
-  logger.debug(JSON.stringify(player));
+  if (typeof filter.name !== "undefined") {
+    queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
+  }
 
-  // `.reload()` is needed otherwise the instance would not be up-to-date
-  return player.reload();
+  return queryFilter;
 }
 
 module.exports = {
   Query: {
-    async findPlayers(root, { filter }, { user }, info) {
-      if (!user) throw new Error("Unauthorized");
+    //  #### Description
+    //    Find all players or some players based on filter
+    //
+    //  #### Parameters
+    //    * filter: criteria to use when searching for players
+    //
+    //  #### Returns
+    //    * findPlayers: the list of players with matching criteria or all players if the filter is not defined
+    async findPlayers(root, { filter }, { authUser }, info) {
+      if (!authUser) throw new Error("Unauthorized");
 
       const include = getInclude(info);
+      const order = [["name", "ASC"]];
 
-      const logFields = {
-        filter: filter,
-      };
+      let logFields = null;
+      let where = null;
 
-      if (typeof filter === "undefined") {
-        logger.debug("Player search");
-
-        try {
-          return await Player.findAll({
-            order: [["name", "ASC"]],
-            include: include,
-          });
-        } catch (findError) {
-          logger.error(findError, {
-            fields: { type: "Player search" },
-          });
-
-          throw findError;
-        }
+      if (typeof filter !== "undefined") {
+        where = { [Op.and]: getFilter(filter) };
+        logFields = { filter };
       }
 
-      let queryFilter = [];
-
-      if (typeof filter.id !== "undefined") {
-        queryFilter.push({ id: { [Op.eq]: filter.id } });
-      }
-
-      if (typeof filter.name !== "undefined") {
-        queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
-      }
-
-      logger.debug("Player search", { fields: logFields });
+      logger.debug("Player search", { logFields });
 
       try {
-        return await Player.findAll({
-          where: {
-            [Op.and]: queryFilter,
-          },
-          order: [["name", "ASC"]],
-          include: include,
-        });
+        return await Player.findAll({ where, order, include });
       } catch (findError) {
-        logger.error(findError, {
-          fields: {
-            type: "Player search",
-            logFields,
-          },
-        });
-
+        if (logFields === null) logFields = {};
+        logFields.type = "Player search";
+        logger.error(findError, { logFields });
         throw findError;
       }
     },
   },
 
   Mutation: {
-    async createPlayer(root, { player }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Create a new player
+    //
+    //  #### Parameters
+    //    * player: the player to create
+    //
+    //  #### Returns
+    //    * createPlayer: the newly created player
+    async createPlayer(root, { player }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
+      const logFields = { player };
 
-      const logFields = {
-        player: player,
-      };
-
-      logger.info("Player creation", {
-        fields: logFields,
-      });
-
-      let result;
-      const transaction = await sequelize.transaction();
+      logger.info("Player creation", { logFields });
 
       try {
-        result = await Player.create(
-          {
-            name: player.name,
-          },
-          {
-            include: include,
-            transaction: transaction,
-          }
-        );
+        return await Player.create({ name: player.name }, { include });
       } catch (createError) {
-        await transaction.rollback();
-
-        logger.error(createError, {
-          fields: {
-            type: "Player creation",
-            logFields,
-          },
-        });
-
+        logFields.type = "Player creation";
+        logger.error(createError, { logFields });
         throw createError;
       }
-
-      result = await setUser(result, player.user, transaction);
-      await transaction.commit();
-      return result;
     },
 
-    async deletePlayer(root, { id }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Delete an existing player
+    //
+    //  #### Parameters
+    //    * id: id of the player to delete
+    //
+    //  #### Returns
+    //    * deletePlayer: boolean describing if the operation was successful or not
+    async deletePlayer(root, { id }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = {
-        id: id,
-      };
+      const logFields = { id };
 
-      logger.info("Player deletion", {
-        fields: logFields,
-      });
+      logger.info("Player deletion", { logFields });
 
       try {
-        return await Player.destroy({ where: { id: id } });
+        return await Player.destroy({ where: { id } });
       } catch (deleteError) {
-        logger.error(deleteError, {
-          fields: { type: "Player deletion", logFields },
-        });
-
+        logFields.type = "Player deletion";
+        logger.error(deleteError, { logFields });
         throw deleteError;
       }
     },
 
-    async updatePlayer(root, { id, player }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Update an existing player
+    //
+    //  #### Parameters
+    //    * id: the player id
+    //    * player: object composed of attributes/values to update
+    //
+    //  #### Returns
+    //    * updatePlayer: the updated player
+    async updatePlayer(root, { id, player }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
+      const logFields = { id, player };
 
-      const logFields = {
-        id: id,
-        player: player,
-      };
+      let result = await Player.findByPk(id, { include });
 
-      let result;
-      const transaction = await sequelize.transaction();
-
-      try {
-        result = await Player.findOne({
-          where: { id: id },
-          include: include,
-        });
-      } catch (updateFindOneError) {
-        logger.error(updateFindOneError, {
-          fields: {
-            type: "Player update - findOne",
-            id: id,
-          },
-        });
-
-        throw updateFindOneError;
-      }
-
-      if (typeof result === "undefined") {
-        logger.error("Player not found", {
-          fields: {
-            type: "Player update",
-            logFields,
-          },
-        });
-
+      if (result === null) {
+        logFields.type = "Player update - player not found";
+        logger.error("Player update - player not found", { logFields });
         throw new Error("Player not found");
       }
 
+      logger.info("Player update", { logFields });
+
+      // We need to map this by hand and use the `save()` function
+      // because for some reason the object return by `Player.update()`
+      // manages the User association like an array
+      // which means the response would always have a null `user` field
       if (typeof player.name !== "undefined") result.name = player.name;
 
-      logger.info("Player update", {
-        fields: logFields,
-      });
-
       try {
-        await result.save({ transaction: transaction });
-      } catch (saveError) {
-        await transaction.rollback();
-
-        logger.error(saveError, {
-          fields: {
-            type: "Player update",
-            logFields,
-          },
-        });
-
-        throw saveError;
+        return await result.save();
+      } catch (updateError) {
+        logFields.type = "Player update";
+        logger.error(updateError, { logFields });
+        throw updateError;
       }
-
-      result = await setUser(result, player.user, transaction);
-      await transaction.commit();
-      return result;
     },
   },
 };

@@ -8,14 +8,22 @@ type User {
   updatedAt: Date
 }
 
-type Mutation {
-  login(username: String!, password: String!): String!
-}
-
 input UserFilter {
   id: ID
   username: String
   isAdmin: Boolean
+}
+
+input UpdateUserInput {
+  username: String
+  password: String
+  isAdmin: Boolean
+  player: ID
+}
+
+type Mutation {
+  login(username: String!, password: String!): String!
+  updateUser(id: ID!, user: UpdateUserInput!): User!
 }
 
 type Query {

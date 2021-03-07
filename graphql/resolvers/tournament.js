@@ -5,177 +5,142 @@ const { Tournament, Roster, Team, sequelize } = require("../../models");
 
 const logger = require("../../logger");
 
-const ROSTER_INCLUDE = {
-  model: Roster,
-  as: "roster",
-};
-
-const TEAM_INCLUDE = {
-  model: Team,
-  as: "teams",
-  // TODO: decide if we want nested includes
-  /*
-  include: [
-    {
-      model: Player,
-      as: "players"
-    },
-    {
-      model: Player,
-      as: "teamLeader"
-    }
-  ],
-  */
-};
-
-// Avoid eager-loading if possible
+// Avoid eager-loading the associations if possible
 function getInclude(info) {
   let include = [];
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "roster"
-    )
-  )
-    include.push(ROSTER_INCLUDE);
+  info.fieldNodes[0].selectionSet.selections.forEach((field) => {
+    if (field.name.value === "roster") {
+      include.push({ model: Roster, as: "roster" });
+      return;
+    }
 
-  if (
-    info.fieldNodes[0].selectionSet.selections.find(
-      (field) => field.name.value === "teams"
-    )
-  )
-    include.push(TEAM_INCLUDE);
+    if (field.name.value === "teams") {
+      include.push({
+        model: Team,
+        as: "teams",
+        // TODO: decide if we want nested includes
+        /*
+        include: [
+          {
+            model: Player,
+            as: "players"
+          },
+          {
+            model: Player,
+            as: "teamLeader"
+          }
+        ],
+        */
+      });
+      return;
+    }
+  });
 
   return include;
 }
 
-async function setRoster(tournament, roster) {
-  if (typeof roster === "undefined" || roster === null) return tournament;
+// Build the query filter based on provided fields
+function getFilter(filter) {
+  let queryFilter = [];
 
-  const logFields = {
-    tournament: tournament,
-    roster: roster,
-  };
+  if (typeof filter.id !== "undefined") {
+    queryFilter.push({ id: { [Op.eq]: filter.id } });
+  }
+
+  if (typeof filter.name !== "undefined") {
+    queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
+  }
+
+  return queryFilter;
+}
+
+//  #### Description
+//    Associate a roster to the tournament
+//
+//  #### Parameters
+//    * tournament: the tournament in which to set the roster
+//    * roster: the roster to associate to the tournament
+//    * transation: the related database transaction
+//
+//  #### Returns
+//    * tournament: the tournament updated with its roster
+async function setRoster(tournament, roster, transaction) {
+  if (typeof roster === "undefined") return tournament;
+
+  const logFields = { tournament, roster };
 
   try {
-    await tournament.setRoster(await Roster.findByPk(roster));
+    await tournament.setRoster(await Roster.findByPk(roster), { transaction });
   } catch (setRosterError) {
-    logger.error(setRosterError, {
-      fields: {
-        type: "Tournament setRoster",
-        logFields,
-      },
-    });
-
+    logFields.type = "Tournament setRoster";
+    logger.error(setRosterError, { logFields });
     throw setRosterError;
   }
 
-  // `.reload()` is needed otherwise the instance would not be up-to-date
-  return tournament.reload();
+  return tournament;
 }
 
 module.exports = {
   Query: {
-    async findTournaments(root, { filter }, { user }, info) {
-      if (!user) throw new Error("Unauthorized");
+    //  #### Description
+    //    Find all tournaments or some tournaments based on filter
+    //
+    //  #### Parameters
+    //    * filter: criteria to use when searching for tournaments
+    //
+    //  #### Returns
+    //    * findTournaments: the list of tournaments with matching criteria or all tournaments if the filter is not defined
+    async findTournaments(root, { filter }, { authUser }, info) {
+      if (!authUser) throw new Error("Unauthorized");
 
       const include = getInclude(info);
+      const order = [["name", "ASC"]];
 
-      const logFields = {
-        filter: filter,
-      };
+      let logFields = null;
+      let where = null;
 
-      if (typeof filter === "undefined") {
-        logger.debug("Tournament search");
-
-        try {
-          return await Tournament.findAll({
-            order: [["name", "ASC"]],
-            include: include,
-          });
-        } catch (findError) {
-          logger.error(findError, {
-            fields: { type: "Tournament search" },
-          });
-
-          throw findError;
-        }
+      if (typeof filter !== "undefined") {
+        where = { [Op.and]: getFilter(filter) };
+        logFields = { filter };
       }
 
-      let queryFilter = [];
-
-      if (typeof filter.id !== "undefined") {
-        queryFilter.push({ id: filter.id });
-      }
-
-      if (typeof filter.name !== "undefined") {
-        queryFilter.push({ name: { [Op.iLike]: "%" + filter.name + "%" } });
-      }
-
-      if (typeof filter.startDate !== "undefined") {
-        queryFilter.push({
-          startDate: { [Op.gte]: filter.startDate },
-        });
-      }
-
-      if (typeof filter.endDate !== "undefined") {
-        queryFilter.push({
-          endDate: { [Op.lte]: filter.endDate },
-        });
-      }
-
-      if (typeof filter.isOpen !== "undefined") {
-        queryFilter.push({ isOpen: filter.isOpen });
-      }
-
-      logger.debug("Tournament search", { fields: logFields });
+      logger.debug("Tournament search", { logFields });
 
       try {
-        return await Tournament.findAll({
-          where: {
-            [Op.and]: queryFilter,
-          },
-          order: [["name", "ASC"]],
-          include: include,
-        });
+        return await Tournament.findAll({ where, order, include });
       } catch (findError) {
-        logger.error(findError, {
-          fields: {
-            type: "Tournament search",
-            logFields,
-          },
-        });
-
+        if (logFields === null) logFields = {};
+        logFields.type = "Tournament search";
+        logger.error(findError, { logFields });
         throw findError;
       }
     },
   },
 
   Mutation: {
-    async createTournament(root, { tournament }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Create a new tournament
+    //
+    //  #### Parameters
+    //    * tournament: the tournament to create
+    //
+    //  #### Returns
+    //    * createTournament: the newly created tournament
+    async createTournament(root, { tournament }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
+
+      const logFields = { tournament };
 
       if (tournament.startDate >= tournament.endDate) {
-        logger.error("startDate should be before endDate", {
-          fields: {
-            type: "Tournament creation",
-            startDate: tournament.startDate,
-            endDate: tournament.endDate,
-          },
-        });
-
+        logFields.type = "Tournament creation";
+        logger.error("startDate should be before endDate", { logFields });
         throw new Error("startDate should be before endDate");
       }
 
       const include = getInclude(info);
 
-      const logFields = {
-        tournament: tournament,
-      };
-
-      logger.info("Tournament creation", {
-        fields: logFields,
-      });
+      logger.info("Tournament creation", { logFields });
 
       let result;
 
@@ -188,135 +153,113 @@ module.exports = {
             gameLimit: tournament.gameLimit,
             isOpen: tournament.isOpen,
           },
-          {
-            include: include,
-          }
+          { include }
         );
       } catch (createError) {
-        logger.error(createError, {
-          fields: {
-            type: "Tournament creation",
-            logFields,
-          },
-        });
-
+        logFields.type = "Tournament creation";
+        logger.error(createError, { logFields });
         throw createError;
       }
 
-      return await setRoster(result, tournament.roster);
+      const transaction = await sequelize.transaction();
+      try {
+        await setRoster(result, tournament.roster, transaction);
+      } catch (associationsError) {
+        await transaction.rollback();
+        await Tournament.destroy({ where: { id: result.id } });
+        throw associationsError;
+      }
+
+      await transaction.commit();
+      return result.reload();
     },
 
-    async deleteTournament(root, { id }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Delete an existing tournament
+    //
+    //  #### Parameters
+    //    * id: id of the tournament to delete
+    //
+    //  #### Returns
+    //    * deleteTournament: boolean describing if the operation was successful or not
+    async deleteTournament(root, { id }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = {
-        id: id,
-      };
+      const logFields = { id };
 
-      logger.info("Tournament deletion", {
-        fields: logFields,
-      });
+      logger.info("Tournament deletion", { logFields });
 
       try {
-        return await Tournament.destroy({ where: { id: id } });
+        return await Tournament.destroy({ where: { id } });
       } catch (deleteError) {
-        logger.error(deleteError, {
-          fields: {
-            type: "Tournament deletion",
-            logFields,
-          },
-        });
-
+        logFields.type = "Tournament deletion";
+        logger.error(deleteError, { logFields });
         throw deleteError;
       }
     },
 
-    async updateTournament(root, { id, tournament }, { user }, info) {
-      if (!user || !user.isAdmin) throw new Error("Unauthorized");
+    //  #### Description
+    //    Update an existing tournament
+    //
+    //  #### Parameters
+    //    * id: the tournament id
+    //    * tournament: object composed of attributes/values to update
+    //
+    //  #### Returns
+    //    * updateTournament: the updated tournament
+    async updateTournament(root, { id, tournament }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
+      const logFields = { id, tournament };
 
-      const logFields = {
-        id: id,
-        tournament: tournament,
-      };
+      let result = await Tournament.findByPk(id, { include });
 
-      let result;
-
-      try {
-        result = await Tournament.findOne({
-          where: { id: id },
-          include: include,
-        });
-      } catch (updateFindOneError) {
-        logger.error(updateFindOneError, {
-          fields: {
-            type: "Tournament update - findOne",
-            id: id,
-          },
-        });
-
-        throw updateFindOneError;
-      }
-
-      if (typeof result === "undefined") {
-        logger.error("Tournament not found", {
-          fields: {
-            type: "Tournament update",
-            logFields,
-          },
-        });
-
+      if (result === null) {
+        logFields.type = "Tournament update - tournament not found";
+        logger.error("Tournament update - tournament not found", { logFields });
         throw new Error("Tournament not found");
       }
 
-      let tmpStartDate = result.startDate.getTime();
-      let tmpEndDate = result.endDate.getTime();
+      logger.info("Tournament update", { logFields });
 
-      if (typeof tournament.startDate !== "undefined")
-        tmpStartDate = tournament.startDate;
-      if (typeof tournament.endDate !== "undefined")
-        tmpEndDate = tournament.endDate;
-
-      if (tmpStartDate >= tmpEndDate) {
-        logger.error("startDate should be before endDate", {
-          fields: {
-            type: "Tournament update",
-            startDate: tmpStartDate,
-            endDate: tmpEndDate,
-          },
-        });
-
-        throw new Error("startDate should be before endDate");
-      }
-
-      result.startDate = tmpStartDate;
-      result.endDate = tmpEndDate;
-
+      // We need to map this by hand and use the `save()` function
+      // because for some reason the object return by `Tournament.update()`
+      // manages the Roster association like an array
+      // which means the response would always have a null `roster` field
+      if (typeof tournament.name !== "undefined") result.name = team.name;
       if (typeof tournament.name !== "undefined") result.name = tournament.name;
+      if (typeof tournament.startDate !== "undefined")
+        result.startDate = tournament.startDate;
+      if (typeof tournament.endDate !== "undefined")
+        result.endDate = tournament.endDate;
       if (typeof tournament.gameLimit !== "undefined")
         result.gameLimit = tournament.gameLimit;
       if (typeof tournament.isOpen !== "undefined")
         result.isOpen = tournament.isOpen;
 
-      logger.info("Tournament update", {
-        fields: logFields,
-      });
+      const transaction = await sequelize.transaction();
 
       try {
-        await result.save();
-      } catch (saveError) {
-        logger.error(saveError, {
-          fields: {
-            type: "Tournament update",
-            logFields,
-          },
-        });
-
-        throw saveError;
+        await result.save({ transaction });
+      } catch (updateError) {
+        await transaction.rollback();
+        logFields.type = "Tournament update";
+        logger.error(updateError, { logFields });
+        throw updateError;
       }
 
-      return await setRoster(result, tournament.roster);
+      try {
+        await setRoster(result, tournament.roster, transaction);
+      } catch (associationsError) {
+        await transaction.rollback();
+        throw associationsError;
+      }
+
+      await transaction.commit();
+
+      // `.reload()` is needed otherwise the instance would not be up-to-date
+      return result.reload();
     },
   },
 };
