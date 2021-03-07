@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>server.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="graphql/resolvers/date.html">
+                  graphql/resolvers/date.js
+                </a>
+              
+                
+                <a class="source" href="graphql/resolvers/player.html">
+                  graphql/resolvers/player.js
+                </a>
+              
+                
+                <a class="source" href="graphql/resolvers/roster.html">
+                  graphql/resolvers/roster.js
+                </a>
+              
+                
+                <a class="source" href="graphql/resolvers/team.html">
+                  graphql/resolvers/team.js
+                </a>
+              
+                
+                <a class="source" href="graphql/resolvers/tournament.html">
+                  graphql/resolvers/tournament.js
+                </a>
+              
+                
+                <a class="source" href="graphql/resolvers/user.html">
+                  graphql/resolvers/user.js
+                </a>
+              
+                
+                <a class="source" href="index.html">
+                  index.js
+                </a>
+              
+                
+                <a class="source" href="logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="models/index.html">
+                  models/index.js
+                </a>
+              
+                
+                <a class="source" href="models/player.html">
+                  models/player.js
+                </a>
+              
+                
+                <a class="source" href="models/roster.html">
+                  models/roster.js
+                </a>
+              
+                
+                <a class="source" href="models/team.html">
+                  models/team.js
+                </a>
+              
+                
+                <a class="source" href="models/tournament.html">
+                  models/tournament.js
+                </a>
+              
+                
+                <a class="source" href="models/user.html">
+                  models/user.js
+                </a>
+              
+                
+                <a class="source" href="server.html">
+                  server.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>server.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
+
+<span class="hljs-keyword">const</span> koa = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;koa&quot;</span>);
+<span class="hljs-keyword">const</span> jwt = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;koa-jwt&quot;</span>);
+<span class="hljs-keyword">const</span> { ApolloServer } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;apollo-server-koa&quot;</span>);
+
+<span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;./logger&quot;</span>);
+
+<span class="hljs-keyword">const</span> SERVER_PORT = process.env.SERVER_PORT || <span class="hljs-number">8888</span>;
+
+<span class="hljs-keyword">const</span> typeDefs = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;./graphql/types&quot;</span>);
+<span class="hljs-keyword">const</span> resolvers = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;./graphql/resolvers&quot;</span>);
+
+<span class="hljs-built_in">module</span>.exports.start = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+  <span class="hljs-keyword">const</span> server = <span class="hljs-keyword">new</span> ApolloServer({
+    typeDefs,
+    resolvers,
+    <span class="hljs-attr">context</span>: <span class="hljs-function">(<span class="hljs-params">{ ctx: { state: authUser } }</span>) =&gt;</span> authUser,
+  });
+
+  <span class="hljs-keyword">const</span> app = <span class="hljs-keyword">new</span> koa();
+  app.use(
+    jwt({
+      <span class="hljs-attr">secret</span>: process.env.JWT_SIGNING_KEY,
+      <span class="hljs-attr">passthrough</span>: <span class="hljs-literal">true</span>,
+      <span class="hljs-attr">key</span>: <span class="hljs-string">&quot;authUser&quot;</span>,
+    })
+  );
+  server.applyMiddleware({ app });
+  app.listen({ <span class="hljs-attr">port</span>: SERVER_PORT }, <span class="hljs-function">() =&gt;</span>
+    logger.info(<span class="hljs-string">`Server started on port <span class="hljs-subst">${SERVER_PORT}</span>`</span>)
+  );
+};</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

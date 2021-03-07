@@ -11,7 +11,7 @@ export $(grep '^[A-Z]' .env | cut -d '=' -f 1)
 
 docker-compose up -d
 
-while ! docker-compose exec db pg_isready &>/dev/null; do sleep 1; done
+while ! docker-compose exec db pg_isready -U "$PGUSER" &>/dev/null; do sleep 1; done
 
 npx sequelize-cli db:migrate
 

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>date.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="../../docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="date.html">
+                  graphql/resolvers/date.js
+                </a>
+              
+                
+                <a class="source" href="player.html">
+                  graphql/resolvers/player.js
+                </a>
+              
+                
+                <a class="source" href="roster.html">
+                  graphql/resolvers/roster.js
+                </a>
+              
+                
+                <a class="source" href="team.html">
+                  graphql/resolvers/team.js
+                </a>
+              
+                
+                <a class="source" href="tournament.html">
+                  graphql/resolvers/tournament.js
+                </a>
+              
+                
+                <a class="source" href="user.html">
+                  graphql/resolvers/user.js
+                </a>
+              
+                
+                <a class="source" href="../../index.html">
+                  index.js
+                </a>
+              
+                
+                <a class="source" href="../../logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="../../models/index.html">
+                  models/index.js
+                </a>
+              
+                
+                <a class="source" href="../../models/player.html">
+                  models/player.js
+                </a>
+              
+                
+                <a class="source" href="../../models/roster.html">
+                  models/roster.js
+                </a>
+              
+                
+                <a class="source" href="../../models/team.html">
+                  models/team.js
+                </a>
+              
+                
+                <a class="source" href="../../models/tournament.html">
+                  models/tournament.js
+                </a>
+              
+                
+                <a class="source" href="../../models/user.html">
+                  models/user.js
+                </a>
+              
+                
+                <a class="source" href="../../server.html">
+                  server.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>date.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
+              </div>
+              <p>Shamelessly copied from <a href="https://www.apollographql.com/docs/apollo-server/schema/scalars-enums/#date-as-a-scalar">https://www.apollographql.com/docs/apollo-server/schema/scalars-enums/#date-as-a-scalar</a></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-meta">
+&quot;use strict&quot;</span>;
+
+<span class="hljs-keyword">const</span> { GraphQLScalarType } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;graphql&quot;</span>);
+<span class="hljs-keyword">const</span> { Kind } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;graphql/language&quot;</span>);
+
+<span class="hljs-built_in">module</span>.exports = {
+  <span class="hljs-attr">Date</span>: <span class="hljs-keyword">new</span> GraphQLScalarType({
+    <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;Date&quot;</span>,
+    <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;Date custom scalar type&quot;</span>,
+    <span class="hljs-function"><span class="hljs-title">parseValue</span>(<span class="hljs-params">value</span>)</span> {
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(value); <span class="hljs-comment">// value from the client</span>
+    },
+    <span class="hljs-function"><span class="hljs-title">serialize</span>(<span class="hljs-params">value</span>)</span> {
+      <span class="hljs-keyword">return</span> value.getTime(); <span class="hljs-comment">// value sent to the client</span>
+    },
+    <span class="hljs-function"><span class="hljs-title">parseLiteral</span>(<span class="hljs-params">ast</span>)</span> {
+      <span class="hljs-keyword">if</span> (ast.kind === Kind.INT) {
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">parseInt</span>(ast.value, <span class="hljs-number">10</span>); <span class="hljs-comment">// ast value is always in string format</span>
+      }
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+    },
+  }),
+};</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

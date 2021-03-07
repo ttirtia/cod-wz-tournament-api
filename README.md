@@ -128,6 +128,20 @@ The following envrionment variables can be used to configure the logging behavio
 * LOG_MAX_SIZE="10m"
 * LOG_MAX_FILES="7d"
 
+## Generate documentation based on comments in source files
+
+Basic source code documentation can be generated with the help of [docco](https://ashkenas.com/docco/).
+
+The command to use is:
+
+```bash
+npx docco *.js graphql/resolvers/*.js models/*.js
+```
+
+The resulting HTML files will be saved in the `docs/` directory.
+
+When writing comments, make sure they are single-line (multi-line is not supported).
+
 ## Class diagram
 
 View and edit `docs/class-diagram.mmd` on [Mermaid Live Editor](https://mermaid-js.github.io/mermaid-live-editor/).

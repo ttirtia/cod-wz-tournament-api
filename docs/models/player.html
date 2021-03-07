@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>player.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="../docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="../graphql/resolvers/date.html">
+                  graphql/resolvers/date.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/player.html">
+                  graphql/resolvers/player.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/roster.html">
+                  graphql/resolvers/roster.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/team.html">
+                  graphql/resolvers/team.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/tournament.html">
+                  graphql/resolvers/tournament.js
+                </a>
+              
+                
+                <a class="source" href="../graphql/resolvers/user.html">
+                  graphql/resolvers/user.js
+                </a>
+              
+                
+                <a class="source" href="../index.html">
+                  index.js
+                </a>
+              
+                
+                <a class="source" href="../logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="index.html">
+                  models/index.js
+                </a>
+              
+                
+                <a class="source" href="player.html">
+                  models/player.js
+                </a>
+              
+                
+                <a class="source" href="roster.html">
+                  models/roster.js
+                </a>
+              
+                
+                <a class="source" href="team.html">
+                  models/team.js
+                </a>
+              
+                
+                <a class="source" href="tournament.html">
+                  models/tournament.js
+                </a>
+              
+                
+                <a class="source" href="user.html">
+                  models/user.js
+                </a>
+              
+                
+                <a class="source" href="../server.html">
+                  server.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>player.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
+
+<span class="hljs-keyword">const</span> { Model } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
+
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-function">(<span class="hljs-params">sequelize, DataTypes</span>) =&gt;</span> {
+  <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Player</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Model</span> </span>{
+    <span class="hljs-keyword">static</span> <span class="hljs-function"><span class="hljs-title">associate</span>(<span class="hljs-params">models</span>)</span> {
+      Player.belongsToMany(models.Roster, {
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;rosters&quot;</span>,
+        <span class="hljs-attr">through</span>: <span class="hljs-string">&quot;players_rosters&quot;</span>,
+        <span class="hljs-attr">foreignKey</span>: <span class="hljs-string">&quot;player_id&quot;</span>,
+        <span class="hljs-attr">otherKey</span>: <span class="hljs-string">&quot;roster_id&quot;</span>,
+      });
+
+      Player.belongsToMany(models.Team, {
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teams&quot;</span>,
+        <span class="hljs-attr">through</span>: <span class="hljs-string">&quot;players_teams&quot;</span>,
+        <span class="hljs-attr">foreignKey</span>: <span class="hljs-string">&quot;player_id&quot;</span>,
+        <span class="hljs-attr">otherKey</span>: <span class="hljs-string">&quot;team_id&quot;</span>,
+      });
+
+      Player.hasMany(models.Team, {
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teamLeaderships&quot;</span>,
+        <span class="hljs-attr">foreignKey</span>: <span class="hljs-string">&quot;team_leader_id&quot;</span>,
+      });
+
+      <span class="hljs-keyword">let</span> userAssociation = Player.belongsToMany(models.User, {
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;user&quot;</span>,
+        <span class="hljs-attr">through</span>: <span class="hljs-string">&quot;players_users&quot;</span>,
+        <span class="hljs-attr">foreignKey</span>: <span class="hljs-string">&quot;player_id&quot;</span>,
+        <span class="hljs-attr">otherKey</span>: <span class="hljs-string">&quot;user_id&quot;</span>,
+      });
+
+      userAssociation.isMultiAssociation = <span class="hljs-literal">false</span>;
+      userAssociation.isSingleAssociation = <span class="hljs-literal">true</span>;
+    }
+  }
+  Player.init(
+    {
+      <span class="hljs-attr">id</span>: {
+        <span class="hljs-attr">type</span>: DataTypes.UUID,
+        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
+        <span class="hljs-attr">defaultValue</span>: DataTypes.UUIDV4,
+        <span class="hljs-attr">primaryKey</span>: <span class="hljs-literal">true</span>,
+      },
+      <span class="hljs-attr">name</span>: {
+        <span class="hljs-attr">type</span>: DataTypes.TEXT,
+        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
+        <span class="hljs-attr">unique</span>: <span class="hljs-literal">true</span>,
+      },
+    },
+    {
+      sequelize,
+      <span class="hljs-attr">modelName</span>: <span class="hljs-string">&quot;Player&quot;</span>,
+    }
+  );
+
+  <span class="hljs-keyword">return</span> Player;
+};</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
