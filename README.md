@@ -6,11 +6,22 @@ Backend to manage private CoD WZ tournaments.
 
 ## Quick start with Docker
 
+1. Start the database and the server
+
 ```bash
-docker-compose up -d
+./utils/local_run_docker.sh
 ```
 
-This will start a PostgreSQL database. **TODO**: This currently does not run the API server.
+This will start a PostgreSQL database, run the migrations and
+build a Docker image with the current application sources.
+
+The API server will then be started on port `$SERVER_PORT` (**8888** by default).
+
+2. Create an admin user
+
+```bash
+docker-compose exec app utils/create_admin.sh
+```
 
 ## Local setup
 
@@ -26,7 +37,10 @@ npm install
 ./utils/local_run.sh
 ```
 
-The API server will be started on port **8888** by default (can be overridden with the environment variable `SERVER_PORT`, see below).
+This will start a dockerised PostgreSQL database, expose its port on `$PGPORT` (**5432** by default)
+and run the migrations.
+
+The API server will then be started on port `$SERVER_PORT` (**8888** by default).
 
 3. Create an admin user
 
@@ -36,9 +50,9 @@ In another shell, run:
 ./utils/create_admin.sh
 ```
 
-4. Test the playground
+## Test the API
 
-Go to http://localhost:8888/graphql (or http://localhost:$SERVER_PORT/graphql)
+Go to http://localhost:8888/graphql (or http://localhost:`$SERVER_PORT`/graphql)
 
 Login with the following mutation:
 
@@ -48,9 +62,9 @@ mutation {
 }
 ```
 
-Save the JWT token you get in response.
+And save the JWT token you get in response.
 
-Click on `HTTP HEADERS` in the lower left corner of the playground and add:
+Then click on `HTTP HEADERS` in the lower left corner of the playground and add:
 
 ```graphql
 {
