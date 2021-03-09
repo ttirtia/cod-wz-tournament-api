@@ -1,8 +1,12 @@
+.editorconfig
+.env
 .gitignore
 docker-compose.yml
 docs/
 LICENSE
-node_modules
+node_modules/
 package-lock.json
 README.md
-utils/local_run*.sh
+utils/*.sh
+.git/
+.dockerignore
