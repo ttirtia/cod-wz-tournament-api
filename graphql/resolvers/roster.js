@@ -143,7 +143,7 @@ module.exports = {
       }
 
       await transaction.commit();
-      return result;
+      return result.reload();
     },
 
     //  #### Description

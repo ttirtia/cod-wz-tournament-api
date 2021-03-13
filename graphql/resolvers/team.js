@@ -199,9 +199,11 @@ module.exports = {
 
       const transaction = await sequelize.transaction();
       try {
-        await setPlayers(result, team.players, transaction);
-        await setTeamLeader(result, team.teamLeader, transaction);
-        await setTournament(result, team.tournament, transaction);
+        await Promise.all([
+          setPlayers(result, team.players, transaction),
+          setTeamLeader(result, team.teamLeader, transaction),
+          setTournament(result, team.tournament, transaction)
+        ]);
       } catch (associationsError) {
         await transaction.rollback();
         await Team.destroy({ where: { id: result.id } });
@@ -209,7 +211,7 @@ module.exports = {
       }
 
       await transaction.commit();
-      return result;
+      return result.reload();
     },
 
     //  #### Description
@@ -279,8 +281,10 @@ module.exports = {
       }
 
       try {
-        await setPlayers(result, team.players, transaction);
-        await setTeamLeader(result, team.teamLeader, transaction);
+        await Promise.all([
+          setPlayers(result, team.players, transaction),
+          setTeamLeader(result, team.teamLeader, transaction)
+        ]);
       } catch (associationsError) {
         await transaction.rollback();
         throw associationsError;
