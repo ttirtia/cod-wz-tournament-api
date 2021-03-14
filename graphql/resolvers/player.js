@@ -73,12 +73,12 @@ module.exports = {
       const include = getInclude(info);
       const order = [["name", "ASC"]];
 
-      let logFields = null;
+      let logFields = { type: "Player search" };
       let where = null;
 
       if (typeof filter !== "undefined") {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug("Player search", { logFields });
@@ -87,7 +87,6 @@ module.exports = {
         return await Player.findAll({ where, order, include });
       } catch (findError) {
         if (logFields === null) logFields = {};
-        logFields.type = "Player search";
         logger.error(findError, { logFields });
         throw findError;
       }
@@ -107,14 +106,13 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { player };
+      const logFields = { player, type: "Player creation" };
 
       logger.info("Player creation", { logFields });
 
       try {
         return await Player.create({ name: player.name }, { include });
       } catch (createError) {
-        logFields.type = "Player creation";
         logger.error(createError, { logFields });
         throw createError;
       }
@@ -131,14 +129,13 @@ module.exports = {
     async deletePlayer(root, { id }, { authUser }, info) {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = { id };
+      const logFields = { id, type: "Player deletion" };
 
       logger.info("Player deletion", { logFields });
 
       try {
         return await Player.destroy({ where: { id } });
       } catch (deleteError) {
-        logFields.type = "Player deletion";
         logger.error(deleteError, { logFields });
         throw deleteError;
       }
@@ -157,13 +154,12 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { id, player };
+      const logFields = { id, player, type: "Player update" };
 
       let result = await Player.findByPk(id, { include });
 
       if (result === null) {
-        logFields.type = "Player update - player not found";
-        logger.error("Player update - player not found", { logFields });
+        logger.error("Player not found", { logFields });
         throw new Error("Player not found");
       }
 
@@ -178,7 +174,6 @@ module.exports = {
       try {
         return await result.save();
       } catch (updateError) {
-        logFields.type = "Player update";
         logger.error(updateError, { logFields });
         throw updateError;
       }
