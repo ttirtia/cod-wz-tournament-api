@@ -53,7 +53,7 @@ async function setPlayer(invitation, player, transaction) {
     throw new Error("Player not found");
   }
 
-  if (await result.getUser() !== null) {
+  if ((await result.getUser()).length) {
     logger.error("Player already linked to a user", { logFields });
     throw new Error("Player already linked to a user");
   }
