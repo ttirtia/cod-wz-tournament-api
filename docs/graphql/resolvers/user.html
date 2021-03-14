@@ -25,6 +25,11 @@
                 </a>
               
                 
+                <a class="source" href="invitation.html">
+                  graphql/resolvers/invitation.js
+                </a>
+              
+                
                 <a class="source" href="player.html">
                   graphql/resolvers/player.js
                 </a>
@@ -62,6 +67,11 @@
                 
                 <a class="source" href="../../models/index.html">
                   models/index.js
+                </a>
+              
+                
+                <a class="source" href="../../models/invitation.html">
+                  models/invitation.js
                 </a>
               
                 
@@ -121,7 +131,7 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
 
 <span class="hljs-keyword">const</span> { Op } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
-<span class="hljs-keyword">const</span> { User, Player, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
+<span class="hljs-keyword">const</span> { User, Player, Invitation, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
 <span class="hljs-keyword">const</span> bcrypt = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;bcrypt&quot;</span>);
 <span class="hljs-keyword">const</span> jwt = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;jsonwebtoken&quot;</span>);
 
@@ -205,7 +215,7 @@
 <ul>
 <li>user: the user for which to set the related player</li>
 <li>player: player id to link to the user</li>
-<li>transation: the related database transaction</li>
+<li>transaction: the related database transaction</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
@@ -217,12 +227,11 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setPlayer</span>(<span class="hljs-params">user, player, transaction</span>) </span>{
   <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> player === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> user;
 
-  <span class="hljs-keyword">const</span> logFields = { user, player };
+  <span class="hljs-keyword">const</span> logFields = { user, player, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;User setPlayer&quot;</span> };
 
   <span class="hljs-keyword">try</span> {
     <span class="hljs-keyword">await</span> user.setPlayer(<span class="hljs-keyword">await</span> Player.findByPk(player), { transaction });
   } <span class="hljs-keyword">catch</span> (setPlayerError) {
-    logFields.type = <span class="hljs-string">&quot;User setPlayer&quot;</span>;
     logger.error(setPlayerError, { logFields });
     <span class="hljs-keyword">throw</span> setPlayerError;
   }
@@ -261,12 +270,12 @@
       <span class="hljs-keyword">const</span> include = getInclude(info);
       <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;username&quot;</span>, <span class="hljs-string">&quot;ASC&quot;</span>]];
 
-      <span class="hljs-keyword">let</span> logFields = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">let</span> logFields = { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;User search&quot;</span> };
       <span class="hljs-keyword">let</span> where = <span class="hljs-literal">null</span>;
 
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter !== <span class="hljs-string">&quot;undefined&quot;</span>) {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug(<span class="hljs-string">&quot;User search&quot;</span>, { logFields });
@@ -275,7 +284,6 @@
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> User.findAll({ where, order, include });
       } <span class="hljs-keyword">catch</span> (findError) {
         <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
-        logFields.type = <span class="hljs-string">&quot;User search&quot;</span>;
         logger.error(findError, { logFields });
         <span class="hljs-keyword">throw</span> findError;
       }
@@ -310,23 +318,21 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">login</span>(<span class="hljs-params">root, { username, password }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (authUser) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Already logged in&quot;</span>);
 
-      <span class="hljs-keyword">const</span> logFields = { username };
+      <span class="hljs-keyword">const</span> logFields = { username, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;User login&quot;</span> };
 
       <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> User.findOne({ <span class="hljs-attr">where</span>: { username } });
       <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
-        logFields.type = <span class="hljs-string">&quot;User login&quot;</span>;
         logger.error(<span class="hljs-string">&quot;Unable to login - user not found&quot;</span>, { logFields });
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unable to login&quot;</span>);
       }
 
       <span class="hljs-keyword">const</span> isMatch = bcrypt.compareSync(password, result.password);
       <span class="hljs-keyword">if</span> (!isMatch) {
-        logFields.type = <span class="hljs-string">&quot;User login&quot;</span>;
         logger.error(<span class="hljs-string">&quot;Unable to login - wrong password&quot;</span>, { logFields });
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unable to login&quot;</span>);
       }
 
-      logger.debug(<span class="hljs-string">&quot;User login&quot;</span>, { <span class="hljs-attr">fields</span>: logFields });
+      logger.debug(<span class="hljs-string">&quot;User login&quot;</span>, { logFields });
 
       <span class="hljs-keyword">return</span> jwt.sign(
         {
@@ -349,6 +355,80 @@
                 <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
+<p>   Create a new user</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>user: the user to create</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>createUser: the newly created user</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">createUser</span>(<span class="hljs-params">root, { invitationId, user }, { authUser }, info</span>)</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> invitationId === <span class="hljs-string">&quot;undefined&quot;</span> || invitationId === <span class="hljs-literal">null</span>)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;An invitation is required to sign up&quot;</span>);
+
+      <span class="hljs-keyword">const</span> invitationWhereClause = {
+        <span class="hljs-attr">id</span>: { [Op.eq]: invitationId },
+        <span class="hljs-attr">validUntil</span>: { [Op.gte]: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>() },
+      };
+
+      <span class="hljs-keyword">const</span> invitation = <span class="hljs-keyword">await</span> Invitation.findOne({
+        <span class="hljs-attr">where</span>: { [Op.and]: invitationWhereClause },
+        <span class="hljs-attr">include</span>: { <span class="hljs-attr">model</span>: Player, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span> },
+      });
+
+      <span class="hljs-keyword">if</span> (invitation === <span class="hljs-literal">null</span>)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;The inviation has expired or doesn&#x27;t exist&quot;</span>);
+
+      <span class="hljs-keyword">const</span> include = getInclude(info);
+      <span class="hljs-keyword">const</span> logFields = { user, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;User creation&quot;</span> };
+
+      logger.info(<span class="hljs-string">&quot;User creation&quot;</span>, { logFields });
+
+      <span class="hljs-keyword">let</span> result;
+
+      <span class="hljs-keyword">try</span> {
+        result = <span class="hljs-keyword">await</span> User.create(
+          {
+            <span class="hljs-attr">username</span>: user.username,
+            <span class="hljs-attr">password</span>: user.password,
+            <span class="hljs-attr">isAdmin</span>: invitation.isAdmin,
+          },
+          { include }
+        );
+      } <span class="hljs-keyword">catch</span> (createError) {
+        logger.error(createError, { logFields });
+        <span class="hljs-keyword">throw</span> createError;
+      }
+
+      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">await</span> result.setPlayer(<span class="hljs-keyword">await</span> invitation.getPlayer());
+      } <span class="hljs-keyword">catch</span> (associationsError) {
+        <span class="hljs-keyword">await</span> transaction.rollback();
+        <span class="hljs-keyword">await</span> User.destroy({ <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: result.id } });
+        <span class="hljs-keyword">throw</span> associationsError;
+      }
+
+      <span class="hljs-keyword">await</span> transaction.commit();
+      <span class="hljs-keyword">await</span> invitation.destroy();
+      <span class="hljs-keyword">return</span> result.reload();
+    },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-8">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
 <p>   Update an existing user</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
@@ -367,57 +447,16 @@
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { id, user };
+      <span class="hljs-keyword">const</span> logFields = { id, user, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;User update&quot;</span> };
 
       <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> User.findByPk(id, { include });
 
       <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
-        logFields.type = <span class="hljs-string">&quot;User update - user not found&quot;</span>;
-        logger.error(<span class="hljs-string">&quot;User update - user not found&quot;</span>, { logFields });
+        logger.error(<span class="hljs-string">&quot;User not found&quot;</span>, { logFields });
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;User not found&quot;</span>);
       }
 
       logger.info(<span class="hljs-string">&quot;User update&quot;</span>, { logFields });</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-8">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
-              </div>
-              <p>We need to map these by hand and use the <code>save()</code> function
-because for some reason the object return by <code>User.update()</code>
-manages the Player association like an array
-which means the response would always have a null <code>player</code> field</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.username !== <span class="hljs-string">&quot;undefined&quot;</span>) result.username = user.username;
-      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.password !== <span class="hljs-string">&quot;undefined&quot;</span>) result.password = user.password;
-      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.isAdmin !== <span class="hljs-string">&quot;undefined&quot;</span>) result.isAdmin = user.isAdmin;
-
-      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
-
-      <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> result.save({ transaction });
-      } <span class="hljs-keyword">catch</span> (updateError) {
-        <span class="hljs-keyword">await</span> transaction.rollback();
-        logFields.type = <span class="hljs-string">&quot;User update&quot;</span>;
-        logger.error(updateError, { logFields });
-        <span class="hljs-keyword">throw</span> updateError;
-      }
-
-      <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> setPlayer(result, user.player, transaction);
-      } <span class="hljs-keyword">catch</span> (associationsError) {
-        <span class="hljs-keyword">await</span> transaction.rollback();
-        <span class="hljs-keyword">throw</span> associationsError;
-      }
-
-      <span class="hljs-keyword">await</span> transaction.commit();</pre></div></div>
             
         </li>
         
@@ -427,6 +466,76 @@ which means the response would always have a null <code>player</code> field</p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-9">&#x00a7;</a>
+              </div>
+              <p>We need to map these by hand and use the <code>save()</code> function
+because for some reason the object return by <code>User.update()</code>
+manages the Player association like an array
+which means the response would always have a null <code>player</code> field</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.username !== <span class="hljs-string">&quot;undefined&quot;</span>) result.username = user.username;
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.password !== <span class="hljs-string">&quot;undefined&quot;</span>) result.password = user.password;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-10">&#x00a7;</a>
+              </div>
+              <p>Only an administrator can change the “isAdmin” attribute</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (authUser.isAdmin) {
+        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> user.isAdmin !== <span class="hljs-string">&quot;undefined&quot;</span>) result.isAdmin = user.isAdmin;
+      }
+
+      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
+
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">await</span> result.save({ transaction });
+      } <span class="hljs-keyword">catch</span> (updateError) {
+        <span class="hljs-keyword">await</span> transaction.rollback();
+        logger.error(updateError, { logFields });
+        <span class="hljs-keyword">throw</span> updateError;
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-11">&#x00a7;</a>
+              </div>
+              <p>Only an administrator can change the link between a User and a Player</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (authUser.isAdmin) {
+        <span class="hljs-keyword">try</span> {
+          <span class="hljs-keyword">await</span> setPlayer(result, user.player, transaction);
+        } <span class="hljs-keyword">catch</span> (associationsError) {
+          <span class="hljs-keyword">await</span> transaction.rollback();
+          <span class="hljs-keyword">throw</span> associationsError;
+        }
+      }
+
+      <span class="hljs-keyword">await</span> transaction.commit();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-12">&#x00a7;</a>
               </div>
               <p><code>.reload()</code> is needed otherwise the instance would not be up-to-date</p>
 

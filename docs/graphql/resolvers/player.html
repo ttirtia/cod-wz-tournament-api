@@ -25,6 +25,11 @@
                 </a>
               
                 
+                <a class="source" href="invitation.html">
+                  graphql/resolvers/invitation.js
+                </a>
+              
+                
                 <a class="source" href="player.html">
                   graphql/resolvers/player.js
                 </a>
@@ -62,6 +67,11 @@
                 
                 <a class="source" href="../../models/index.html">
                   models/index.js
+                </a>
+              
+                
+                <a class="source" href="../../models/invitation.html">
+                  models/invitation.js
                 </a>
               
                 
@@ -232,12 +242,12 @@
       <span class="hljs-keyword">const</span> include = getInclude(info);
       <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;ASC&quot;</span>]];
 
-      <span class="hljs-keyword">let</span> logFields = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">let</span> logFields = { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Player search&quot;</span> };
       <span class="hljs-keyword">let</span> where = <span class="hljs-literal">null</span>;
 
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter !== <span class="hljs-string">&quot;undefined&quot;</span>) {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug(<span class="hljs-string">&quot;Player search&quot;</span>, { logFields });
@@ -245,7 +255,7 @@
       <span class="hljs-keyword">try</span> {
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Player.findAll({ where, order, include });
       } <span class="hljs-keyword">catch</span> (findError) {
-        logFields.type = <span class="hljs-string">&quot;Player search&quot;</span>;
+        <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
         logger.error(findError, { logFields });
         <span class="hljs-keyword">throw</span> findError;
       }
@@ -280,14 +290,13 @@
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { player };
+      <span class="hljs-keyword">const</span> logFields = { player, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Player creation&quot;</span> };
 
       logger.info(<span class="hljs-string">&quot;Player creation&quot;</span>, { logFields });
 
       <span class="hljs-keyword">try</span> {
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Player.create({ <span class="hljs-attr">name</span>: player.name }, { include });
       } <span class="hljs-keyword">catch</span> (createError) {
-        logFields.type = <span class="hljs-string">&quot;Player creation&quot;</span>;
         logger.error(createError, { logFields });
         <span class="hljs-keyword">throw</span> createError;
       }
@@ -318,14 +327,13 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">deletePlayer</span>(<span class="hljs-params">root, { id }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
-      <span class="hljs-keyword">const</span> logFields = { id };
+      <span class="hljs-keyword">const</span> logFields = { id, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Player deletion&quot;</span> };
 
       logger.info(<span class="hljs-string">&quot;Player deletion&quot;</span>, { logFields });
 
       <span class="hljs-keyword">try</span> {
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Player.destroy({ <span class="hljs-attr">where</span>: { id } });
       } <span class="hljs-keyword">catch</span> (deleteError) {
-        logFields.type = <span class="hljs-string">&quot;Player deletion&quot;</span>;
         logger.error(deleteError, { logFields });
         <span class="hljs-keyword">throw</span> deleteError;
       }
@@ -358,13 +366,12 @@
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { id, player };
+      <span class="hljs-keyword">const</span> logFields = { id, player, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Player update&quot;</span> };
 
       <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> Player.findByPk(id, { include });
 
       <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
-        logFields.type = <span class="hljs-string">&quot;Player update - player not found&quot;</span>;
-        logger.error(<span class="hljs-string">&quot;Player update - player not found&quot;</span>, { logFields });
+        logger.error(<span class="hljs-string">&quot;Player not found&quot;</span>, { logFields });
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Player not found&quot;</span>);
       }
 
@@ -391,7 +398,6 @@ which means the response would always have a null <code>user</code> field</p>
       <span class="hljs-keyword">try</span> {
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> result.save();
       } <span class="hljs-keyword">catch</span> (updateError) {
-        logFields.type = <span class="hljs-string">&quot;Player update&quot;</span>;
         logger.error(updateError, { logFields });
         <span class="hljs-keyword">throw</span> updateError;
       }

@@ -25,6 +25,11 @@
                 </a>
               
                 
+                <a class="source" href="invitation.html">
+                  graphql/resolvers/invitation.js
+                </a>
+              
+                
                 <a class="source" href="player.html">
                   graphql/resolvers/player.js
                 </a>
@@ -62,6 +67,11 @@
                 
                 <a class="source" href="../../models/index.html">
                   models/index.js
+                </a>
+              
+                
+                <a class="source" href="../../models/invitation.html">
+                  models/invitation.js
                 </a>
               
                 
@@ -227,7 +237,7 @@
 <ul>
 <li>tournament: the tournament in which to set the roster</li>
 <li>roster: the roster to associate to the tournament</li>
-<li>transation: the related database transaction</li>
+<li>transaction: the related database transaction</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
@@ -239,12 +249,11 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setRoster</span>(<span class="hljs-params">tournament, roster, transaction</span>) </span>{
   <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> roster === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> tournament;
 
-  <span class="hljs-keyword">const</span> logFields = { tournament, roster };
+  <span class="hljs-keyword">const</span> logFields = { tournament, roster, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Tournament setRoster&quot;</span> };
 
   <span class="hljs-keyword">try</span> {
     <span class="hljs-keyword">await</span> tournament.setRoster(<span class="hljs-keyword">await</span> Roster.findByPk(roster), { transaction });
   } <span class="hljs-keyword">catch</span> (setRosterError) {
-    logFields.type = <span class="hljs-string">&quot;Tournament setRoster&quot;</span>;
     logger.error(setRosterError, { logFields });
     <span class="hljs-keyword">throw</span> setRosterError;
   }
@@ -283,12 +292,12 @@
       <span class="hljs-keyword">const</span> include = getInclude(info);
       <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;ASC&quot;</span>]];
 
-      <span class="hljs-keyword">let</span> logFields = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">let</span> logFields = { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Tournament search&quot;</span> };
       <span class="hljs-keyword">let</span> where = <span class="hljs-literal">null</span>;
 
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter !== <span class="hljs-string">&quot;undefined&quot;</span>) {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug(<span class="hljs-string">&quot;Tournament search&quot;</span>, { logFields });
@@ -296,7 +305,7 @@
       <span class="hljs-keyword">try</span> {
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Tournament.findAll({ where, order, include });
       } <span class="hljs-keyword">catch</span> (findError) {
-        logFields.type = <span class="hljs-string">&quot;Tournament search&quot;</span>;
+        <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
         logger.error(findError, { logFields });
         <span class="hljs-keyword">throw</span> findError;
       }
@@ -330,10 +339,9 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">createTournament</span>(<span class="hljs-params">root, { tournament }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
-      <span class="hljs-keyword">const</span> logFields = { tournament };
+      <span class="hljs-keyword">const</span> logFields = { tournament, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Tournament creation&quot;</span> };
 
       <span class="hljs-keyword">if</span> (tournament.startDate &gt;= tournament.endDate) {
-        logFields.type = <span class="hljs-string">&quot;Tournament creation&quot;</span>;
         logger.error(<span class="hljs-string">&quot;startDate should be before endDate&quot;</span>, { logFields });
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;startDate should be before endDate&quot;</span>);
       }
@@ -356,7 +364,6 @@
           { include }
         );
       } <span class="hljs-keyword">catch</span> (createError) {
-        logFields.type = <span class="hljs-string">&quot;Tournament creation&quot;</span>;
         logger.error(createError, { logFields });
         <span class="hljs-keyword">throw</span> createError;
       }
@@ -399,14 +406,13 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">deleteTournament</span>(<span class="hljs-params">root, { id }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
-      <span class="hljs-keyword">const</span> logFields = { id };
+      <span class="hljs-keyword">const</span> logFields = { id, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Tournament deletion&quot;</span> };
 
       logger.info(<span class="hljs-string">&quot;Tournament deletion&quot;</span>, { logFields });
 
       <span class="hljs-keyword">try</span> {
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Tournament.destroy({ <span class="hljs-attr">where</span>: { id } });
       } <span class="hljs-keyword">catch</span> (deleteError) {
-        logFields.type = <span class="hljs-string">&quot;Tournament deletion&quot;</span>;
         logger.error(deleteError, { logFields });
         <span class="hljs-keyword">throw</span> deleteError;
       }
@@ -439,13 +445,12 @@
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { id, tournament };
+      <span class="hljs-keyword">const</span> logFields = { id, tournament, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Tournament update&quot;</span> };
 
       <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> Tournament.findByPk(id, { include });
 
       <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
-        logFields.type = <span class="hljs-string">&quot;Tournament update - tournament not found&quot;</span>;
-        logger.error(<span class="hljs-string">&quot;Tournament update - tournament not found&quot;</span>, { logFields });
+        logger.error(<span class="hljs-string">&quot;Tournament not found&quot;</span>, { logFields });
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Tournament not found&quot;</span>);
       }
 
@@ -484,7 +489,6 @@ which means the response would always have a null <code>roster</code> field</p>
         <span class="hljs-keyword">await</span> result.save({ transaction });
       } <span class="hljs-keyword">catch</span> (updateError) {
         <span class="hljs-keyword">await</span> transaction.rollback();
-        logFields.type = <span class="hljs-string">&quot;Tournament update&quot;</span>;
         logger.error(updateError, { logFields });
         <span class="hljs-keyword">throw</span> updateError;
       }

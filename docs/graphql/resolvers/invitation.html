@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>roster.js</title>
+  <title>invitation.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="../../docco.css" />
@@ -113,7 +113,7 @@
         
           <li id="title">
               <div class="annotation">
-                  <h1>roster.js</h1>
+                  <h1>invitation.js</h1>
               </div>
           </li>
         
@@ -131,9 +131,11 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
 
 <span class="hljs-keyword">const</span> { Op } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
-<span class="hljs-keyword">const</span> { Roster, Player, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
+<span class="hljs-keyword">const</span> { Invitation, Player, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
 
-<span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);</pre></div></div>
+<span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);
+
+<span class="hljs-keyword">const</span> INVITATION_VALID_HOURS = <span class="hljs-string">&quot;48&quot;</span>;</pre></div></div>
             
         </li>
         
@@ -152,12 +154,8 @@
   <span class="hljs-keyword">let</span> include = [];
 
   info.fieldNodes[<span class="hljs-number">0</span>].selectionSet.selections.forEach(<span class="hljs-function">(<span class="hljs-params">field</span>) =&gt;</span> {
-    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;players&quot;</span>) {
-      include.push({
-        <span class="hljs-attr">model</span>: Player,
-        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;players&quot;</span>,
-        <span class="hljs-attr">through</span>: { <span class="hljs-attr">attributes</span>: [] },
-      });
+    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;player&quot;</span>) {
+      include.push({ <span class="hljs-attr">model</span>: Player, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span> });
       <span class="hljs-keyword">return</span>;
     }
   });
@@ -185,10 +183,6 @@
     queryFilter.push({ <span class="hljs-attr">id</span>: { [Op.eq]: filter.id } });
   }
 
-  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter.name !== <span class="hljs-string">&quot;undefined&quot;</span>) {
-    queryFilter.push({ <span class="hljs-attr">name</span>: { [Op.iLike]: <span class="hljs-string">&quot;%&quot;</span> + filter.name + <span class="hljs-string">&quot;%&quot;</span> } });
-  }
-
   <span class="hljs-keyword">return</span> queryFilter;
 }</pre></div></div>
             
@@ -202,38 +196,44 @@
                 <a class="ss" href="#section-4">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Associate players to the roster</p>
+<p>   Associate player to the invitation</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>roster: the roster in which to set the players</li>
-<li>players: list of players to set in the roster</li>
+<li>invitation: the invitation to update</li>
+<li>player: the player ID to link to the invitation</li>
 <li>transaction: the related database transaction</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>roster: the roster updated with the players</li>
+<li>invitation: the invitation updated with its player</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setPlayers</span>(<span class="hljs-params">roster, players, transaction</span>) </span>{
-  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> players === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> roster;
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setPlayer</span>(<span class="hljs-params">invitation, player, transaction</span>) </span>{
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> player === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> invitation;
 
-  <span class="hljs-keyword">const</span> logFields = { roster, players, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster setPlayers&quot;</span> };
+  <span class="hljs-keyword">const</span> logFields = { invitation, player, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Invitation setPlayer&quot;</span> };
 
-  <span class="hljs-keyword">try</span> {
-    <span class="hljs-keyword">await</span> roster.setPlayers(
-      <span class="hljs-keyword">await</span> Player.findAll({
-        <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: { [Op.in]: players } },
-      }),
-      { transaction }
-    );
-  } <span class="hljs-keyword">catch</span> (setPlayersError) {
-    logger.error(setPlayersError, logFields);
-    <span class="hljs-keyword">throw</span> setPlayersError;
+  <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> Player.findByPk(player);
+  <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
+    logger.error(<span class="hljs-string">&quot;Player not found&quot;</span>, { logFields });
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Player not found&quot;</span>);
   }
 
-  <span class="hljs-keyword">return</span> roster;
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">await</span> result.getUser() !== <span class="hljs-literal">null</span>) {
+    logger.error(<span class="hljs-string">&quot;Player already linked to a user&quot;</span>, { logFields });
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Player already linked to a user&quot;</span>);
+  }
+
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> invitation.setPlayer(result, { transaction });
+  } <span class="hljs-keyword">catch</span> (setPlayerError) {
+    logger.error(setPlayerError, { logFields });
+    <span class="hljs-keyword">throw</span> setPlayerError;
+  }
+
+  <span class="hljs-keyword">return</span> invitation;
 }
 
 <span class="hljs-built_in">module</span>.exports = {
@@ -249,25 +249,25 @@
                 <a class="ss" href="#section-5">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Find all rosters or some rosters based on filter</p>
+<p>   Find all invitations or some invitations based on filter</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>filter: criteria to use when searching for rosters</li>
+<li>filter: criteria to use when searching for invitations</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>findRosters: the list of rosters with matching criteria or all rosters if the filter is not defined</li>
+<li>findInvitations: the list of invitations with matching criteria or all invitations if the filter is not defined</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">findRosters</span>(<span class="hljs-params">root, { filter }, { authUser }, info</span>)</span> {
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">findInvitations</span>(<span class="hljs-params">root, { filter }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;ASC&quot;</span>]];
+      <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;validUntil&quot;</span>, <span class="hljs-string">&quot;DESC&quot;</span>]];
 
-      <span class="hljs-keyword">let</span> logFields = { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster search&quot;</span> };
+      <span class="hljs-keyword">let</span> logFields = { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Invitation search&quot;</span> };
       <span class="hljs-keyword">let</span> where = <span class="hljs-literal">null</span>;
 
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter !== <span class="hljs-string">&quot;undefined&quot;</span>) {
@@ -275,10 +275,10 @@
         logFields.filter = filter;
       }
 
-      logger.debug(<span class="hljs-string">&quot;Roster search&quot;</span>, { logFields });
+      logger.debug(<span class="hljs-string">&quot;Invitation search&quot;</span>, { logFields });
 
       <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Roster.findAll({ where, order, include });
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Invitation.findAll({ where, order, include });
       } <span class="hljs-keyword">catch</span> (findError) {
         <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
         logger.error(findError, { logFields });
@@ -299,30 +299,40 @@
                 <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Create a new roster</p>
+<p>   Create a new invitation</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>roster: the roster to create</li>
+<li>invitation: the invitation to create</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>createRoster: the newly created roster</li>
+<li>createInvitation: the newly created invitation</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">createRoster</span>(<span class="hljs-params">root, { roster }, { authUser }, info</span>)</span> {
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">createInvitation</span>(<span class="hljs-params">root, { invitation }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { roster, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster creation&quot;</span> };
+      <span class="hljs-keyword">const</span> logFields = { invitation, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Invitation creation&quot;</span> };
 
-      logger.info(<span class="hljs-string">&quot;Roster creation&quot;</span>, { logFields });
+      logger.info(<span class="hljs-string">&quot;Invitation creation&quot;</span>, { logFields });
 
       <span class="hljs-keyword">let</span> result;
+      <span class="hljs-keyword">let</span> validUntilDate = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>();
+      validUntilDate.setHours(
+        validUntilDate.getHours() + INVITATION_VALID_HOURS
+      );
 
       <span class="hljs-keyword">try</span> {
-        result = <span class="hljs-keyword">await</span> Roster.create({ <span class="hljs-attr">name</span>: roster.name }, { include });
+        result = <span class="hljs-keyword">await</span> Invitation.create(
+          {
+            <span class="hljs-attr">validUntil</span>: validUntilDate,
+            <span class="hljs-attr">isAdmin</span>: invitation.isAdmin,
+          },
+          { include }
+        );
       } <span class="hljs-keyword">catch</span> (createError) {
         logger.error(createError, { logFields });
         <span class="hljs-keyword">throw</span> createError;
@@ -330,10 +340,10 @@
 
       <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
       <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> setPlayers(result, roster.players, transaction);
+        <span class="hljs-keyword">await</span> setPlayer(result, invitation.player, transaction);
       } <span class="hljs-keyword">catch</span> (associationsError) {
         <span class="hljs-keyword">await</span> transaction.rollback();
-        <span class="hljs-keyword">await</span> Roster.destroy({ <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: result.id } });
+        <span class="hljs-keyword">await</span> Invitation.destroy({ <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: result.id } });
         <span class="hljs-keyword">throw</span> associationsError;
       }
 
@@ -351,122 +361,31 @@
                 <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Delete an existing roster</p>
+<p>   Delete an existing invitation</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>id: id of the roster to delete</li>
+<li>id: id of the invitation to delete</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>deleteRoster: boolean describing if the operation was successful or not</li>
+<li>deleteInvitation: boolean describing if the operation was successful or not</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">deleteRoster</span>(<span class="hljs-params">root, { id }, { authUser }, info</span>)</span> {
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">deleteInvitation</span>(<span class="hljs-params">root, { id }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
-      <span class="hljs-keyword">const</span> logFields = { id, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster deletion&quot;</span> };
+      <span class="hljs-keyword">const</span> logFields = { id, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Invitation deletion&quot;</span> };
 
-      logger.info(<span class="hljs-string">&quot;Roster deletion&quot;</span>, { logFields });
+      logger.info(<span class="hljs-string">&quot;Invitation deletion&quot;</span>, { logFields });
 
       <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Roster.destroy({ <span class="hljs-attr">where</span>: { id } });
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Invitation.destroy({ <span class="hljs-attr">where</span>: { id } });
       } <span class="hljs-keyword">catch</span> (deleteError) {
         logger.error(deleteError, { logFields });
         <span class="hljs-keyword">throw</span> deleteError;
       }
-    },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-8">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
-              </div>
-              <h4 id="description">Description</h4>
-<p>   Update an existing roster</p>
-<h4 id="parameters">Parameters</h4>
-<ul>
-<li>id: the roster id</li>
-<li>roster: object composed of attributes/values to update</li>
-</ul>
-<h4 id="returns">Returns</h4>
-<ul>
-<li>updateRoster: the updated roster</li>
-</ul>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">updateRoster</span>(<span class="hljs-params">root, { id, roster }, { authUser }, info</span>)</span> {
-      <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
-
-      <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { id, roster, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster update&quot;</span> };
-
-      <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> Roster.findByPk(id, { include });
-
-      <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
-        logger.error(<span class="hljs-string">&quot;Roster not found&quot;</span>, { logFields });
-        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Roster not found&quot;</span>);
-      }
-
-      logger.info(<span class="hljs-string">&quot;Roster update&quot;</span>, { logFields });</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-9">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-9">&#x00a7;</a>
-              </div>
-              <p>We need to map this by hand and use the <code>save()</code> function
-because for some reason the object return by <code>Roster.update()</code>
-manages the Player association like an array
-which means the response would always have a null <code>players</code> field</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> roster.name !== <span class="hljs-string">&quot;undefined&quot;</span>) result.name = roster.name;
-
-      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
-
-      <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> result.save({ transaction });
-      } <span class="hljs-keyword">catch</span> (updateError) {
-        <span class="hljs-keyword">await</span> transaction.rollback();
-        logger.error(updateError, { logFields });
-        <span class="hljs-keyword">throw</span> updateError;
-      }
-
-      <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> setPlayers(result, roster.players, transaction);
-      } <span class="hljs-keyword">catch</span> (associationsError) {
-        <span class="hljs-keyword">await</span> transaction.rollback();
-        <span class="hljs-keyword">throw</span> associationsError;
-      }
-
-      <span class="hljs-keyword">await</span> transaction.commit();</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-10">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-10">&#x00a7;</a>
-              </div>
-              <p><code>.reload()</code> is needed otherwise the instance would not be up-to-date</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> result.reload();
     },
   },
 };</pre></div></div>

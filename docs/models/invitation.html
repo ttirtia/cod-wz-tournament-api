@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>index.js</title>
+  <title>invitation.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="../docco.css" />
@@ -113,7 +113,7 @@
         
           <li id="title">
               <div class="annotation">
-                  <h1>index.js</h1>
+                  <h1>invitation.js</h1>
               </div>
           </li>
         
@@ -130,50 +130,47 @@
             
             <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
 
-<span class="hljs-keyword">const</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;fs&quot;</span>);
-<span class="hljs-keyword">const</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;path&quot;</span>);
-<span class="hljs-keyword">const</span> Sequelize = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
-<span class="hljs-keyword">const</span> basename = path.basename(__filename);
-<span class="hljs-keyword">const</span> env = process.env.NODE_ENV || <span class="hljs-string">&quot;dev&quot;</span>;
-<span class="hljs-keyword">const</span> config = <span class="hljs-built_in">require</span>(__dirname + <span class="hljs-string">&quot;/../config/config.js&quot;</span>)[env];
-<span class="hljs-keyword">const</span> db = {};
+<span class="hljs-keyword">const</span> { Model } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
 
-<span class="hljs-keyword">let</span> sequelize;
-<span class="hljs-keyword">if</span> (config.use_env_variable) {
-  sequelize = <span class="hljs-keyword">new</span> Sequelize(process.env[config.use_env_variable], config);
-} <span class="hljs-keyword">else</span> {
-  sequelize = <span class="hljs-keyword">new</span> Sequelize(
-    config.database,
-    config.username,
-    config.password,
-    config
-  );
-}
-
-fs.readdirSync(__dirname)
-  .filter(<span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> {
-    <span class="hljs-keyword">return</span> (
-      file.indexOf(<span class="hljs-string">&quot;.&quot;</span>) !== <span class="hljs-number">0</span> &amp;&amp; file !== basename &amp;&amp; file.slice(-<span class="hljs-number">3</span>) === <span class="hljs-string">&quot;.js&quot;</span>
-    );
-  })
-  .forEach(<span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> {
-    <span class="hljs-keyword">const</span> model = <span class="hljs-built_in">require</span>(path.join(__dirname, file))(
-      sequelize,
-      Sequelize.DataTypes
-    );
-    db[model.name] = model;
-  });
-
-<span class="hljs-built_in">Object</span>.keys(db).forEach(<span class="hljs-function">(<span class="hljs-params">modelName</span>) =&gt;</span> {
-  <span class="hljs-keyword">if</span> (db[modelName].associate) {
-    db[modelName].associate(db);
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-function">(<span class="hljs-params">sequelize, DataTypes</span>) =&gt;</span> {
+  <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Invitation</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Model</span> </span>{
+    <span class="hljs-comment">/**
+     * Helper method for defining associations.
+     * This method is not a part of Sequelize lifecycle.
+     * The `models/index` file will call this method automatically.
+     */</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-function"><span class="hljs-title">associate</span>(<span class="hljs-params">models</span>)</span> {
+      Invitation.belongsTo(models.Player, {
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span>,
+      });
+    }
   }
-});
+  Invitation.init(
+    {
+      <span class="hljs-attr">id</span>: {
+        <span class="hljs-attr">type</span>: DataTypes.UUID,
+        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
+        <span class="hljs-attr">defaultValue</span>: DataTypes.UUIDV4,
+        <span class="hljs-attr">primaryKey</span>: <span class="hljs-literal">true</span>,
+      },
+      <span class="hljs-attr">isAdmin</span>: {
+        <span class="hljs-attr">type</span>: DataTypes.BOOLEAN,
+        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
+        <span class="hljs-attr">defaultValue</span>: <span class="hljs-literal">false</span>,
+      },
+      <span class="hljs-attr">validUntil</span>: {
+        <span class="hljs-attr">type</span>: DataTypes.DATE,
+        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
+      },
+    },
+    {
+      sequelize,
+      <span class="hljs-attr">modelName</span>: <span class="hljs-string">&quot;Invitation&quot;</span>,
+    }
+  );
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
-<span class="hljs-built_in">module</span>.exports = db;</pre></div></div>
+  <span class="hljs-keyword">return</span> Invitation;
+};</pre></div></div>
             
         </li>
         
