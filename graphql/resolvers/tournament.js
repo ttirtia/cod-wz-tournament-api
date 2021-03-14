@@ -61,7 +61,7 @@ function getFilter(filter) {
 //  #### Parameters
 //    * tournament: the tournament in which to set the roster
 //    * roster: the roster to associate to the tournament
-//    * transation: the related database transaction
+//    * transaction: the related database transaction
 //
 //  #### Returns
 //    * tournament: the tournament updated with its roster
