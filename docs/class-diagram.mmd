@@ -58,15 +58,23 @@ classDiagram
     +String name
     +String password
     +bool isAdmin
+    +Player player
   }
 
-  Tournament "1..*" o-- "1" Roster
+  class Invitation {
+    +Player: player
+    +Boolean: isAdmin
+    +Date: validUntil
+  }
+
+  Tournament "1..*" o-- "0..1" Roster
   Tournament "1..*" o-- "1" PointsCalculationRule
-  Tournament "1" *-- "1..*" Team
-  Roster "1..*" o-- "1..*" Player
+  Tournament "1" *-- "0..*" Team
+  Roster "1..*" o-- "0..*" Player
   Team "1..*" o-- "1..*" Player
-  Team "1" *-- "1..*" Game
+  Team "1" *-- "0..*" Game
   Game "1" *-- "1..*" PlayerResult
   PlayerResult "1..*" o-- "1" Player
   PointsCalculationRule "1" *-- "0..2" PointsCalculationRule
   Player "0..1" o-- "0..1" User
+  Player "1" *-- "0..1" Invitation
