@@ -61,7 +61,7 @@ function getFilter(filter) {
 async function setPlayers(team, players, transaction) {
   if (typeof players === "undefined") return team;
 
-  const logFields = { team, players };
+  const logFields = { team, players, type: "Team setPlayers" };
 
   try {
     await team.setPlayers(
@@ -71,7 +71,6 @@ async function setPlayers(team, players, transaction) {
       { transaction }
     );
   } catch (setPlayersError) {
-    logFields.type = "Team setPlayers";
     logger.error(setPlayersError, { logFields });
     throw setPlayersError;
   }
@@ -92,12 +91,11 @@ async function setPlayers(team, players, transaction) {
 async function setTeamLeader(team, player, transaction) {
   if (typeof player === "undefined") return team;
 
-  const logFields = { team, player };
+  const logFields = { team, player, type: "Team setTeamLeader" };
 
   try {
     await team.setTeamLeader(await Player.findByPk(player), { transaction });
   } catch (setTeamLeaderError) {
-    logFields.type = "Team setTeamLeader";
     logger.error(setTeamLeaderError, { logFields });
     throw setTeamLeaderError;
   }
@@ -118,14 +116,13 @@ async function setTeamLeader(team, player, transaction) {
 async function setTournament(team, tournament, transaction) {
   if (typeof tournament === "undefined") return team;
 
-  const logFields = { team, tournament };
+  const logFields = { team, tournament, type: "Team setTournament" };
 
   try {
     await team.setTournament(await Tournament.findByPk(tournament), {
       transaction,
     });
   } catch (setTournamentError) {
-    logFields.type = "Team setTournament";
     logger.error(setTournamentError, { logFields });
     throw setTournamentError;
   }
@@ -149,12 +146,12 @@ module.exports = {
       const include = getInclude(info);
       const order = [["name", "ASC"]];
 
-      let logFields = null;
+      let logFields = { type: "Team search" };
       let where = null;
 
       if (typeof filter !== "undefined") {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug("Team search", { logFields });
@@ -163,7 +160,6 @@ module.exports = {
         return await Team.findAll({ where, order, include });
       } catch (findError) {
         if (logFields === null) logFields = {};
-        logFields.type = "Team search";
         logger.error(findError, { logFields });
         throw findError;
       }
@@ -183,7 +179,7 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { team };
+      const logFields = { team, type: "Team creation" };
 
       logger.info("Team creation", { logFields });
 
@@ -192,7 +188,6 @@ module.exports = {
       try {
         result = await Team.create({ name: team.name }, { include });
       } catch (createError) {
-        logFields.type = "Team creation";
         logger.error(createError, { logFields });
         throw createError;
       }
@@ -225,14 +220,13 @@ module.exports = {
     async deleteTeam(root, { id }, { authUser }, info) {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = { id };
+      const logFields = { id, type: "Team deletion" };
 
       logger.info("Team deletion", { logFields });
 
       try {
         return await Team.destroy({ where: { id } });
       } catch (deleteError) {
-        logFields.type = "Team deletion";
         logger.error(deleteError, { logFields });
         throw deleteError;
       }
@@ -251,13 +245,12 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { id, team };
+      const logFields = { id, team, type: "Team update" };
 
       let result = await Team.findByPk(id, { include });
 
       if (result === null) {
-        logFields.type = "Team update - team not found";
-        logger.error("Team update - team not found", { logFields });
+        logger.error("Team not found", { logFields });
         throw new Error("Team not found");
       }
 
@@ -275,7 +268,6 @@ module.exports = {
         await result.save({ transaction });
       } catch (updateError) {
         await transaction.rollback();
-        logFields.type = "Team update";
         logger.error(updateError, { logFields });
         throw updateError;
       }

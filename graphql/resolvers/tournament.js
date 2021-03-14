@@ -68,12 +68,11 @@ function getFilter(filter) {
 async function setRoster(tournament, roster, transaction) {
   if (typeof roster === "undefined") return tournament;
 
-  const logFields = { tournament, roster };
+  const logFields = { tournament, roster, type: "Tournament setRoster" };
 
   try {
     await tournament.setRoster(await Roster.findByPk(roster), { transaction });
   } catch (setRosterError) {
-    logFields.type = "Tournament setRoster";
     logger.error(setRosterError, { logFields });
     throw setRosterError;
   }
@@ -97,12 +96,12 @@ module.exports = {
       const include = getInclude(info);
       const order = [["name", "ASC"]];
 
-      let logFields = null;
+      let logFields = { type: "Tournament search" };
       let where = null;
 
       if (typeof filter !== "undefined") {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug("Tournament search", { logFields });
@@ -111,7 +110,6 @@ module.exports = {
         return await Tournament.findAll({ where, order, include });
       } catch (findError) {
         if (logFields === null) logFields = {};
-        logFields.type = "Tournament search";
         logger.error(findError, { logFields });
         throw findError;
       }
@@ -130,10 +128,9 @@ module.exports = {
     async createTournament(root, { tournament }, { authUser }, info) {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = { tournament };
+      const logFields = { tournament, type: "Tournament creation" };
 
       if (tournament.startDate >= tournament.endDate) {
-        logFields.type = "Tournament creation";
         logger.error("startDate should be before endDate", { logFields });
         throw new Error("startDate should be before endDate");
       }
@@ -156,7 +153,6 @@ module.exports = {
           { include }
         );
       } catch (createError) {
-        logFields.type = "Tournament creation";
         logger.error(createError, { logFields });
         throw createError;
       }
@@ -185,14 +181,13 @@ module.exports = {
     async deleteTournament(root, { id }, { authUser }, info) {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = { id };
+      const logFields = { id, type: "Tournament deletion" };
 
       logger.info("Tournament deletion", { logFields });
 
       try {
         return await Tournament.destroy({ where: { id } });
       } catch (deleteError) {
-        logFields.type = "Tournament deletion";
         logger.error(deleteError, { logFields });
         throw deleteError;
       }
@@ -211,13 +206,12 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { id, tournament };
+      const logFields = { id, tournament, type: "Tournament update" };
 
       let result = await Tournament.findByPk(id, { include });
 
       if (result === null) {
-        logFields.type = "Tournament update - tournament not found";
-        logger.error("Tournament update - tournament not found", { logFields });
+        logger.error("Tournament not found", { logFields });
         throw new Error("Tournament not found");
       }
 
@@ -244,7 +238,6 @@ module.exports = {
         await result.save({ transaction });
       } catch (updateError) {
         await transaction.rollback();
-        logFields.type = "Tournament update";
         logger.error(updateError, { logFields });
         throw updateError;
       }

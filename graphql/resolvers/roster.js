@@ -51,7 +51,7 @@ function getFilter(filter) {
 async function setPlayers(roster, players, transaction) {
   if (typeof players === "undefined") return roster;
 
-  const logFields = { roster, players };
+  const logFields = { roster, players, type: "Roster setPlayers" };
 
   try {
     await roster.setPlayers(
@@ -61,7 +61,6 @@ async function setPlayers(roster, players, transaction) {
       { transaction }
     );
   } catch (setPlayersError) {
-    logFields.type = "Roster setPlayers";
     logger.error(setPlayersError, logFields);
     throw setPlayersError;
   }
@@ -85,12 +84,12 @@ module.exports = {
       const include = getInclude(info);
       const order = [["name", "ASC"]];
 
-      let logFields = null;
+      let logFields = { type: "Roster search" };
       let where = null;
 
       if (typeof filter !== "undefined") {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug("Roster search", { logFields });
@@ -99,7 +98,6 @@ module.exports = {
         return await Roster.findAll({ where, order, include });
       } catch (findError) {
         if (logFields === null) logFields = {};
-        logFields.type = "Roster search";
         logger.error(findError, { logFields });
         throw findError;
       }
@@ -119,7 +117,7 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { roster };
+      const logFields = { roster, type: "Roster creation" };
 
       logger.info("Roster creation", { logFields });
 
@@ -128,7 +126,6 @@ module.exports = {
       try {
         result = await Roster.create({ name: roster.name }, { include });
       } catch (createError) {
-        logFields.type = "Roster creation";
         logger.error(createError, { logFields });
         throw createError;
       }
@@ -157,14 +154,13 @@ module.exports = {
     async deleteRoster(root, { id }, { authUser }, info) {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = { id };
+      const logFields = { id, type: "Roster deletion" };
 
       logger.info("Roster deletion", { logFields });
 
       try {
         return await Roster.destroy({ where: { id } });
       } catch (deleteError) {
-        logFields.type = "Roster deletion";
         logger.error(deleteError, { logFields });
         throw deleteError;
       }
@@ -183,13 +179,12 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { id, roster };
+      const logFields = { id, roster, type: "Roster update" };
 
       let result = await Roster.findByPk(id, { include });
 
       if (result === null) {
-        logFields.type = "Roster update - roster not found";
-        logger.error("Roster update - roster not found", { logFields });
+        logger.error("Roster not found", { logFields });
         throw new Error("Roster not found");
       }
 
@@ -207,7 +202,6 @@ module.exports = {
         await result.save({ transaction });
       } catch (updateError) {
         await transaction.rollback();
-        logFields.type = "Roster update";
         logger.error(updateError, { logFields });
         throw updateError;
       }

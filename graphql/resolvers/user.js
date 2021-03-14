@@ -59,12 +59,11 @@ function getFilter(filter) {
 async function setPlayer(user, player, transaction) {
   if (typeof player === "undefined") return user;
 
-  const logFields = { user, player };
+  const logFields = { user, player, type: "User setPlayer" };
 
   try {
     await user.setPlayer(await Player.findByPk(player), { transaction });
   } catch (setPlayerError) {
-    logFields.type = "User setPlayer";
     logger.error(setPlayerError, { logFields });
     throw setPlayerError;
   }
@@ -88,12 +87,12 @@ module.exports = {
       const include = getInclude(info);
       const order = [["username", "ASC"]];
 
-      let logFields = null;
+      let logFields = { type: "User search" };
       let where = null;
 
       if (typeof filter !== "undefined") {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug("User search", { logFields });
@@ -102,7 +101,6 @@ module.exports = {
         return await User.findAll({ where, order, include });
       } catch (findError) {
         if (logFields === null) logFields = {};
-        logFields.type = "User search";
         logger.error(findError, { logFields });
         throw findError;
       }
@@ -122,18 +120,16 @@ module.exports = {
     async login(root, { username, password }, { authUser }, info) {
       if (authUser) throw new Error("Already logged in");
 
-      const logFields = { username };
+      const logFields = { username, type: "User login" };
 
       const result = await User.findOne({ where: { username } });
       if (result === null) {
-        logFields.type = "User login";
         logger.error("Unable to login - user not found", { logFields });
         throw new Error("Unable to login");
       }
 
       const isMatch = bcrypt.compareSync(password, result.password);
       if (!isMatch) {
-        logFields.type = "User login";
         logger.error("Unable to login - wrong password", { logFields });
         throw new Error("Unable to login");
       }
@@ -177,7 +173,7 @@ module.exports = {
         throw new Error("The inviation has expired or doesn't exist");
 
       const include = getInclude(info);
-      const logFields = { user };
+      const logFields = { user, type: "User creation" };
 
       logger.info("User creation", { logFields });
 
@@ -193,7 +189,6 @@ module.exports = {
           { include }
         );
       } catch (createError) {
-        logFields.type = "User creation";
         logger.error(createError, { logFields });
         throw createError;
       }
@@ -226,13 +221,12 @@ module.exports = {
         throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { id, user };
+      const logFields = { id, user, type: "User update" };
 
       let result = await User.findByPk(id, { include });
 
       if (result === null) {
-        logFields.type = "User update - user not found";
-        logger.error("User update - user not found", { logFields });
+        logger.error("User not found", { logFields });
         throw new Error("User not found");
       }
 
@@ -244,7 +238,11 @@ module.exports = {
       // which means the response would always have a null `player` field
       if (typeof user.username !== "undefined") result.username = user.username;
       if (typeof user.password !== "undefined") result.password = user.password;
-      if (typeof user.isAdmin !== "undefined") result.isAdmin = user.isAdmin;
+
+      // Only an administrator can change the "isAdmin" attribute
+      if (authUser.isAdmin) {
+        if (typeof user.isAdmin !== "undefined") result.isAdmin = user.isAdmin;
+      }
 
       const transaction = await sequelize.transaction();
 
@@ -252,16 +250,18 @@ module.exports = {
         await result.save({ transaction });
       } catch (updateError) {
         await transaction.rollback();
-        logFields.type = "User update";
         logger.error(updateError, { logFields });
         throw updateError;
       }
 
-      try {
-        await setPlayer(result, user.player, transaction);
-      } catch (associationsError) {
-        await transaction.rollback();
-        throw associationsError;
+      // Only an administrator can change the link between a User and a Player
+      if (authUser.isAdmin) {
+        try {
+          await setPlayer(result, user.player, transaction);
+        } catch (associationsError) {
+          await transaction.rollback();
+          throw associationsError;
+        }
       }
 
       await transaction.commit();
