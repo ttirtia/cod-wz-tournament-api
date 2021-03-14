@@ -54,7 +54,7 @@ function getFilter(filter) {
 //  #### Parameters
 //    * team: the team in which to set the players
 //    * players: list of players to set in the team
-//    * transation: the related database transaction
+//    * transaction: the related database transaction
 //
 //  #### Returns
 //    * team: the team updated with the players
@@ -85,7 +85,7 @@ async function setPlayers(team, players, transaction) {
 //  #### Parameters
 //    * team: the team in which to set the team leader
 //    * player: the player to set as team leader
-//    * transation: the related database transaction
+//    * transaction: the related database transaction
 //
 //  #### Returns
 //    * team: the team updated with the team leader
@@ -111,7 +111,7 @@ async function setTeamLeader(team, player, transaction) {
 //  #### Parameters
 //    * team: the team for which to set the related tournament
 //    * tournament: the tournament the team is a part of
-//    * transation: the related database transaction
+//    * transaction: the related database transaction
 //
 //  #### Returns
 //    * team: the team updated with its tournament

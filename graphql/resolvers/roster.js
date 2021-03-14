@@ -44,7 +44,7 @@ function getFilter(filter) {
 //  #### Parameters
 //    * roster: the roster in which to set the players
 //    * players: list of players to set in the roster
-//    * transation: the related database transaction
+//    * transaction: the related database transaction
 //
 //  #### Returns
 //    * roster: the roster updated with the players

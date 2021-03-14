@@ -8,10 +8,9 @@ type User {
   updatedAt: Date
 }
 
-input UserFilter {
-  id: ID
-  username: String
-  isAdmin: Boolean
+input CreateUserInput {
+  username: String!
+  password: String!
 }
 
 input UpdateUserInput {
@@ -21,8 +20,15 @@ input UpdateUserInput {
   player: ID
 }
 
+input UserFilter {
+  id: ID
+  username: String
+  isAdmin: Boolean
+}
+
 type Mutation {
   login(username: String!, password: String!): String!
+  createUser(invitationId: ID!, user: CreateUserInput!): User!
   updateUser(id: ID!, user: UpdateUserInput!): User!
 }
 

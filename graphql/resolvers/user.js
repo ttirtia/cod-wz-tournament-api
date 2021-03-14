@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { User, Player, sequelize } = require("../../models");
+const { User, Player, Invitation, sequelize } = require("../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -52,7 +52,7 @@ function getFilter(filter) {
 //  #### Parameters
 //    * user: the user for which to set the related player
 //    * player: player id to link to the user
-//    * transation: the related database transaction
+//    * transaction: the related database transaction
 //
 //  #### Returns
 //    * user: the user updated with its player
@@ -149,6 +149,67 @@ module.exports = {
         process.env.JWT_SIGNING_KEY,
         { expiresIn: JWT_TOKEN_TIMEOUT }
       );
+    },
+
+    //  #### Description
+    //    Create a new user
+    //
+    //  #### Parameters
+    //    * user: the user to create
+    //
+    //  #### Returns
+    //    * createUser: the newly created user
+    async createUser(root, { invitationId, user }, { authUser }, info) {
+      if (typeof invitationId === "undefined" || invitationId === null)
+        throw new Error("An invitation is required to sign up");
+
+      const invitationWhereClause = {
+        id: { [Op.eq]: invitationId },
+        validUntil: { [Op.gte]: new Date() },
+      };
+
+      const invitation = await Invitation.findOne({
+        where: { [Op.and]: invitationWhereClause },
+        include: { model: Player, as: "player" },
+      });
+
+      if (invitation === null)
+        throw new Error("The inviation has expired or doesn't exist");
+
+      const include = getInclude(info);
+      const logFields = { user };
+
+      logger.info("User creation", { logFields });
+
+      let result;
+
+      try {
+        result = await User.create(
+          {
+            username: user.username,
+            password: user.password,
+            isAdmin: invitation.isAdmin,
+          },
+          { include }
+        );
+      } catch (createError) {
+        logFields.type = "User creation";
+        logger.error(createError, { logFields });
+        throw createError;
+      }
+
+      const transaction = await sequelize.transaction();
+      try {
+        await result.setPlayer(await invitation.getPlayer());
+      } catch (associationsError) {
+        await transaction.rollback();
+        await User.destroy({ where: { id: result.id } });
+        throw associationsError;
+      }
+
+      await transaction.commit();
+      await invitation.destroy();
+      return result.reload();
     },
 
     //  #### Description
