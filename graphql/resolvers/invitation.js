@@ -45,12 +45,22 @@ function getFilter(filter) {
 async function setPlayer(invitation, player, transaction) {
   if (typeof player === "undefined") return invitation;
 
-  const logFields = { invitation, player };
+  const logFields = { invitation, player, type: "Invitation setPlayer" };
+
+  const result = await Player.findByPk(player);
+  if (result === null) {
+    logger.error("Player not found", { logFields });
+    throw new Error("Player not found");
+  }
+
+  if (await result.getUser() !== null) {
+    logger.error("Player already linked to a user", { logFields });
+    throw new Error("Player already linked to a user");
+  }
 
   try {
-    await invitation.setPlayer(await Player.findByPk(player), { transaction });
+    await invitation.setPlayer(result, { transaction });
   } catch (setPlayerError) {
-    logFields.type = "Invitation setPlayer";
     logger.error(setPlayerError, { logFields });
     throw setPlayerError;
   }
@@ -74,12 +84,12 @@ module.exports = {
       const include = getInclude(info);
       const order = [["validUntil", "DESC"]];
 
-      let logFields = null;
+      let logFields = { type: "Invitation search" };
       let where = null;
 
       if (typeof filter !== "undefined") {
         where = { [Op.and]: getFilter(filter) };
-        logFields = { filter };
+        logFields.filter = filter;
       }
 
       logger.debug("Invitation search", { logFields });
@@ -88,7 +98,6 @@ module.exports = {
         return await Invitation.findAll({ where, order, include });
       } catch (findError) {
         if (logFields === null) logFields = {};
-        logFields.type = "Invitation search";
         logger.error(findError, { logFields });
         throw findError;
       }
@@ -108,7 +117,7 @@ module.exports = {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
       const include = getInclude(info);
-      const logFields = { invitation };
+      const logFields = { invitation, type: "Invitation creation" };
 
       logger.info("Invitation creation", { logFields });
 
@@ -127,7 +136,6 @@ module.exports = {
           { include }
         );
       } catch (createError) {
-        logFields.type = "Invitation creation";
         logger.error(createError, { logFields });
         throw createError;
       }
@@ -156,14 +164,13 @@ module.exports = {
     async deleteInvitation(root, { id }, { authUser }, info) {
       if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
 
-      const logFields = { id };
+      const logFields = { id, type: "Invitation deletion" };
 
       logger.info("Invitation deletion", { logFields });
 
       try {
         return await Invitation.destroy({ where: { id } });
       } catch (deleteError) {
-        logFields.type = "Invitation deletion";
         logger.error(deleteError, { logFields });
         throw deleteError;
       }
