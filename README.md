@@ -52,7 +52,7 @@ In another shell, run:
 
 ## Test the API
 
-Go to http://localhost:8888/graphql (or http://localhost:`$SERVER_PORT`/graphql)
+Go to http://localhost:8888/graphql (or http://localhost:$SERVER_PORT/graphql)
 
 Login with the following mutation:
 
