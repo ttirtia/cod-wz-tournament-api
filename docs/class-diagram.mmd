@@ -10,7 +10,6 @@ classDiagram
     +PointsCalculationRule pointsCalculationRule
 
     +createRandomTeams() List~Team~
-    +getResults() List~Team~
   }
 
   class Roster {
@@ -24,26 +23,23 @@ classDiagram
 
   class Team {
     +String name
+    +int placement
+    +int points
     +Player teamLeader
     +List~Player~ players
     +List~Game~ games
-    +int placement
-
-    +getTotalPoints() int
-    +fetchGames(Date startDate, Date endDate, int limit) List~Game~
   }
 
   class Game {
-    +Team team
-    +List~PlayerResult~ playerResults
     +int placement
-
-    +getPoints() int
+    +int points
+    +Team team
+    +List~GameResult~ results
   }
 
-  class PlayerResult {
-    +Player player
+  class GameResult {
     +int kills
+    +Player player
   }
 
   class PointsCalculationRule {
@@ -73,8 +69,8 @@ classDiagram
   Roster "1..*" o-- "0..*" Player
   Team "1..*" o-- "1..*" Player
   Team "1" *-- "0..*" Game
-  Game "1" *-- "1..*" PlayerResult
-  PlayerResult "1..*" o-- "1" Player
+  Game "1" *-- "1..*" GameResult
+  GameResult "1..*" o-- "1" Player
   PointsCalculationRule "1" *-- "0..2" PointsCalculationRule
   Player "0..1" o-- "0..1" User
   Player "1" *-- "0..1" Invitation

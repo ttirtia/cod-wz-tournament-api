@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Team, Player, Tournament, sequelize } = require("../../models");
+const { Team, Player, Tournament, Game, sequelize } = require("../../models");
 
 const logger = require("../../logger");
 
@@ -26,6 +26,11 @@ function getInclude(info) {
 
     if (field.name.value === "tournament") {
       include.push({ model: Tournament, as: "tournament" });
+      return;
+    }
+
+    if (field.name.value === "games") {
+      include.push({ model: Game, as: "games" });
       return;
     }
   });
@@ -197,7 +202,7 @@ module.exports = {
         await Promise.all([
           setPlayers(result, team.players, transaction),
           setTeamLeader(result, team.teamLeader, transaction),
-          setTournament(result, team.tournament, transaction)
+          setTournament(result, team.tournament, transaction),
         ]);
       } catch (associationsError) {
         await transaction.rollback();
@@ -275,7 +280,7 @@ module.exports = {
       try {
         await Promise.all([
           setPlayers(result, team.players, transaction),
-          setTeamLeader(result, team.teamLeader, transaction)
+          setTeamLeader(result, team.teamLeader, transaction),
         ]);
       } catch (associationsError) {
         await transaction.rollback();

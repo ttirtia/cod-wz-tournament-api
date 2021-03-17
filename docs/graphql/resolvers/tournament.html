@@ -25,6 +25,11 @@
                 </a>
               
                 
+                <a class="source" href="game.html">
+                  graphql/resolvers/game.js
+                </a>
+              
+                
                 <a class="source" href="invitation.html">
                   graphql/resolvers/invitation.js
                 </a>
@@ -62,6 +67,16 @@
                 
                 <a class="source" href="../../logger.html">
                   logger.js
+                </a>
+              
+                
+                <a class="source" href="../../models/game.html">
+                  models/game.js
+                </a>
+              
+                
+                <a class="source" href="../../models/gameResult.html">
+                  models/gameResult.js
                 </a>
               
                 
@@ -131,9 +146,10 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
 
 <span class="hljs-keyword">const</span> { Op } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
-<span class="hljs-keyword">const</span> { Tournament, Roster, Team, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
+<span class="hljs-keyword">const</span> { Tournament, Roster, Team, Player, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
 
-<span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);</pre></div></div>
+<span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);
+<span class="hljs-keyword">const</span> team = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;./team&quot;</span>);</pre></div></div>
             
         </li>
         
@@ -160,33 +176,17 @@
     <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;teams&quot;</span>) {
       include.push({
         <span class="hljs-attr">model</span>: Team,
-        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teams&quot;</span>,</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-3">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-3">&#x00a7;</a>
-              </div>
-              <p>TODO: decide if we want nested includes</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-comment">/*
-        include: [
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teams&quot;</span>,
+        <span class="hljs-attr">include</span>: [
           {
-            model: Player,
-            as: &quot;players&quot;
+            <span class="hljs-attr">model</span>: Player,
+            <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;players&quot;</span>,
           },
           {
-            model: Player,
-            as: &quot;teamLeader&quot;
-          }
+            <span class="hljs-attr">model</span>: Player,
+            <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teamLeader&quot;</span>,
+          },
         ],
-        */</span>
       });
       <span class="hljs-keyword">return</span>;
     }
@@ -198,11 +198,11 @@
         </li>
         
         
-        <li id="section-4">
+        <li id="section-3">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-4">&#x00a7;</a>
+                <a class="ss" href="#section-3">&#x00a7;</a>
               </div>
               <p>Build the query filter based on provided fields</p>
 
@@ -225,11 +225,11 @@
         </li>
         
         
-        <li id="section-5">
+        <li id="section-4">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-5">&#x00a7;</a>
+                <a class="ss" href="#section-4">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
 <p>   Associate a roster to the tournament</p>
@@ -259,10 +259,39 @@
   }
 
   <span class="hljs-keyword">return</span> tournament;
-}
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-5">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
+<p>   Sort teams based on the teamOrder parameter</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>tournament: the tournament in which to sort the teams</li>
+<li>teamOrder: the order in which to sort the teams</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>tournament: the tournament with its sorted teams</li>
+</ul>
 
-<span class="hljs-built_in">module</span>.exports = {
-  <span class="hljs-attr">Query</span>: {</pre></div></div>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setTeamPlacements</span>(<span class="hljs-params">teams</span>) </span>{
+  <span class="hljs-keyword">let</span> teamPoints = [];
+
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> team <span class="hljs-keyword">of</span> teams) {
+    teamPoints.push({ <span class="hljs-attr">team</span>: team, <span class="hljs-attr">points</span>: <span class="hljs-keyword">await</span> team.points });
+  }
+
+  teamPoints.sort(<span class="hljs-function">(<span class="hljs-params">t1, t2</span>) =&gt;</span> {</pre></div></div>
             
         </li>
         
@@ -272,6 +301,83 @@
               
               <div class="sswrap ">
                 <a class="ss" href="#section-6">&#x00a7;</a>
+              </div>
+              <p>Ascending order (less points == higher place) - might need review later on
+when we have PointsCalculationRules</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> t1.points &gt; t2.points ? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;
+  });
+
+  <span class="hljs-keyword">return</span> teamPoints.map(<span class="hljs-function">(<span class="hljs-params">t</span>) =&gt;</span> {
+    t.team.placement = teamPoints.indexOf(t) + <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">return</span> t.team;
+  });
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-7">&#x00a7;</a>
+              </div>
+              <h4 id="description">Description</h4>
+<p>   Sort teams based on the teamOrder parameter</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>tournament: the tournament in which to sort the teams</li>
+<li>teamOrder: the order in which to sort the teams</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>tournament: the tournament with its sorted teams</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">sortTeams</span>(<span class="hljs-params">teams, teamOrder</span>) </span>{
+  <span class="hljs-keyword">const</span> order = teamOrder || <span class="hljs-string">&quot;PLACEMENT_ASC&quot;</span>;
+
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">switch</span> (order) {
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;PLACEMENT_ASC&quot;</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;PLACEMENT_DESC&quot;</span>:
+        <span class="hljs-keyword">return</span> teams.sort(<span class="hljs-function">(<span class="hljs-params">t1, t2</span>) =&gt;</span> {
+          <span class="hljs-keyword">if</span> (order === <span class="hljs-string">&quot;PLACEMENT_ASC&quot;</span>) <span class="hljs-keyword">return</span> t1.placement &gt; t2.placement ? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;
+          <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> t1.placement &lt; t2.placement ? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;
+        });
+
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;NAME_ASC&quot;</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;NAME_DESC&quot;</span>:
+        <span class="hljs-keyword">return</span> teams.sort(<span class="hljs-function">(<span class="hljs-params">t1, t2</span>) =&gt;</span> {
+          <span class="hljs-keyword">if</span> (order === <span class="hljs-string">&quot;NAME_ASC&quot;</span>) <span class="hljs-keyword">return</span> t1.name &gt; t2.name ? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;
+          <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> t1.name &lt; t2.name ? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;
+        });
+
+      <span class="hljs-keyword">default</span>:
+        <span class="hljs-keyword">return</span> teams;
+    }
+  } <span class="hljs-keyword">catch</span> (sortTeamsError) {
+    logger.error(sortTeamsError, { <span class="hljs-attr">logFields</span>: { tournament } });
+    <span class="hljs-keyword">throw</span> sortTeamsError;
+  }
+}
+
+<span class="hljs-built_in">module</span>.exports = {
+  <span class="hljs-attr">Query</span>: {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
 <p>   Find all tournaments or some tournaments based on filter</p>
@@ -286,7 +392,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">findTournaments</span>(<span class="hljs-params">root, { filter }, { authUser }, info</span>)</span> {
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">findTournaments</span>(<span class="hljs-params">root, { filter, teamOrder }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
       <span class="hljs-keyword">const</span> include = getInclude(info);
@@ -303,7 +409,40 @@
       logger.debug(<span class="hljs-string">&quot;Tournament search&quot;</span>, { logFields });
 
       <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Tournament.findAll({ where, order, include });
+        <span class="hljs-keyword">let</span> tournaments = <span class="hljs-keyword">await</span> Tournament.findAll({ where, order, include });
+
+        <span class="hljs-keyword">let</span> includeTeams = <span class="hljs-literal">false</span>;
+        include.forEach(<span class="hljs-function">(<span class="hljs-params">inc</span>) =&gt;</span> {
+          <span class="hljs-keyword">if</span> (inc.as === <span class="hljs-string">&quot;teams&quot;</span>) {
+            includeTeams = <span class="hljs-literal">true</span>;
+            <span class="hljs-keyword">return</span>;
+          }
+        });
+
+        <span class="hljs-keyword">if</span> (includeTeams) {
+          <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> tournament <span class="hljs-keyword">of</span> tournaments) {
+            <span class="hljs-keyword">let</span> teams = <span class="hljs-keyword">await</span> tournament.getTeams({
+              <span class="hljs-attr">include</span>: [
+                {
+                  <span class="hljs-attr">model</span>: Player,
+                  <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;players&quot;</span>,
+                },
+                {
+                  <span class="hljs-attr">model</span>: Player,
+                  <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teamLeader&quot;</span>,
+                },
+              ],
+            });
+
+            <span class="hljs-keyword">if</span> (teams.length) {
+              teams = <span class="hljs-keyword">await</span> setTeamPlacements(teams);
+              teams = <span class="hljs-keyword">await</span> sortTeams(teams, teamOrder);
+              tournament.teams = teams;
+            }
+          }
+        }
+
+        <span class="hljs-keyword">return</span> tournaments;
       } <span class="hljs-keyword">catch</span> (findError) {
         <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
         logger.error(findError, { logFields });
@@ -317,11 +456,11 @@
         </li>
         
         
-        <li id="section-7">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-7">&#x00a7;</a>
+                <a class="ss" href="#section-9">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
 <p>   Create a new tournament</p>
@@ -384,11 +523,11 @@
         </li>
         
         
-        <li id="section-8">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
+                <a class="ss" href="#section-10">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
 <p>   Delete an existing tournament</p>
@@ -421,11 +560,11 @@
         </li>
         
         
-        <li id="section-9">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-9">&#x00a7;</a>
+                <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
 <p>   Update an existing tournament</p>
@@ -459,11 +598,11 @@
         </li>
         
         
-        <li id="section-10">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-10">&#x00a7;</a>
+                <a class="ss" href="#section-12">&#x00a7;</a>
               </div>
               <p>We need to map this by hand and use the <code>save()</code> function
 because for some reason the object return by <code>Tournament.update()</code>
@@ -505,11 +644,11 @@ which means the response would always have a null <code>roster</code> field</p>
         </li>
         
         
-        <li id="section-11">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-11">&#x00a7;</a>
+                <a class="ss" href="#section-13">&#x00a7;</a>
               </div>
               <p><code>.reload()</code> is needed otherwise the instance would not be up-to-date</p>
 
