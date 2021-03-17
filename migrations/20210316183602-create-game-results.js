@@ -5,24 +5,24 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     try {
       await queryInterface.sequelize.query(
-        `CREATE TABLE teams (
-          id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-          name              TEXT UNIQUE NOT NULL,
-          team_leader_id    UUID REFERENCES players(id) ON DELETE SET NULL,
-          tournament_id     UUID REFERENCES tournaments(id) ON DELETE CASCADE,
-          created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
-          updated_at        TIMESTAMP WITH TIME ZONE NOT NULL
+        `CREATE TABLE games (
+          id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          team_id        UUID REFERENCES teams(id) ON DELETE CASCADE,
+          placement      INTEGER NOT NULL,
+          created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
+          updated_at     TIMESTAMP WITH TIME ZONE NOT NULL
         );`,
         { transaction: transaction }
       );
 
       await queryInterface.sequelize.query(
-        `CREATE TABLE players_teams (
+        `CREATE TABLE game_results (
+          id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          game_id        UUID REFERENCES games(id) ON DELETE CASCADE,
           player_id      UUID REFERENCES players(id) ON DELETE CASCADE,
-          team_id        UUID REFERENCES teams(id) ON DELETE CASCADE,
+          kills          INTEGER NOT NULL,
           created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
-          updated_at     TIMESTAMP WITH TIME ZONE NOT NULL,
-          PRIMARY KEY(player_id, team_id)
+          updated_at     TIMESTAMP WITH TIME ZONE NOT NULL
         );`,
         { transaction: transaction }
       );
@@ -37,11 +37,11 @@ module.exports = {
   down: async (queryInterface, Sequelize) => {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.sequelize.query(`DROP TABLE players_teams;`, {
+      await queryInterface.sequelize.query(`DROP TABLE game_results;`, {
         transaction: transaction,
       });
 
-      await queryInterface.sequelize.query(`DROP TABLE teams;`, {
+      await queryInterface.sequelize.query(`DROP TABLE games;`, {
         transaction: transaction,
       });
 

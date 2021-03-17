@@ -25,6 +25,11 @@
                 </a>
               
                 
+                <a class="source" href="game.html">
+                  graphql/resolvers/game.js
+                </a>
+              
+                
                 <a class="source" href="invitation.html">
                   graphql/resolvers/invitation.js
                 </a>
@@ -62,6 +67,16 @@
                 
                 <a class="source" href="../../logger.html">
                   logger.js
+                </a>
+              
+                
+                <a class="source" href="../../models/game.html">
+                  models/game.js
+                </a>
+              
+                
+                <a class="source" href="../../models/gameResult.html">
+                  models/gameResult.js
                 </a>
               
                 
@@ -131,7 +146,7 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
 
 <span class="hljs-keyword">const</span> { Op } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
-<span class="hljs-keyword">const</span> { Team, Player, Tournament, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
+<span class="hljs-keyword">const</span> { Team, Player, Tournament, Game, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
 
 <span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);</pre></div></div>
             
@@ -168,6 +183,11 @@
 
     <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;tournament&quot;</span>) {
       include.push({ <span class="hljs-attr">model</span>: Tournament, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;tournament&quot;</span> });
+      <span class="hljs-keyword">return</span>;
+    }
+
+    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;games&quot;</span>) {
+      include.push({ <span class="hljs-attr">model</span>: Game, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;games&quot;</span> });
       <span class="hljs-keyword">return</span>;
     }
   });

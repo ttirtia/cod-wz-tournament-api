@@ -2,9 +2,11 @@ type Team {
   id: ID!
   name: String!
   placement: Int
+  points: Int
   teamLeader: Player!
   players: [Player]!
   tournament: Tournament!
+  games: [Game]
   createdAt: Date!
   updatedAt: Date
 }
@@ -18,7 +20,6 @@ input CreateTeamInput {
 
 input UpdateTeamInput {
   name: String
-  placement: Int
   teamLeader: ID
   players: [ID]
 }

@@ -11,6 +11,13 @@ type Tournament {
   updatedAt: Date
 }
 
+enum TeamOrder {
+  NAME_ASC
+  NAME_DESC
+  PLACEMENT_ASC
+  PLACEMENT_DESC
+}
+
 input CreateTournamentInput {
   name: String!
   startDate: Date!
@@ -44,5 +51,5 @@ type Mutation {
 }
 
 type Query {
-  findTournaments(filter: TournamentFilter): [Tournament]
+  findTournaments(filter: TournamentFilter, teamOrder: TeamOrder): [Tournament]
 }

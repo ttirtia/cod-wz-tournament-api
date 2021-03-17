@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
       Team.belongsTo(models.Tournament, {
         as: "tournament",
       });
+
+      Team.hasMany(models.Game, {
+        as: "games",
+        foreignKey: "team_id",
+      });
     }
   }
   Team.init(
@@ -34,8 +39,21 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
-      placement: {
-        type: DataTypes.INTEGER,
+      points: {
+        type: DataTypes.VIRTUAL,
+        async get() {
+          const games = await this.getGames();
+          let points = games.length ? 0 : null;
+
+          for (const game of await this.getGames()) {
+            points += await game.points;
+          }
+
+          return points;
+        },
+        set(value) {
+          throw new Error("Do not try to set the `points` value!");
+        },
       },
     },
     {

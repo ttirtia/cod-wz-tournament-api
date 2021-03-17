@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Tournament, Roster, Team, sequelize } = require("../../models");
+const { Tournament, Roster, Team, Player, sequelize } = require("../../models");
 
 const logger = require("../../logger");
 
@@ -19,19 +19,16 @@ function getInclude(info) {
       include.push({
         model: Team,
         as: "teams",
-        // TODO: decide if we want nested includes
-        /*
         include: [
           {
             model: Player,
-            as: "players"
+            as: "players",
           },
           {
             model: Player,
-            as: "teamLeader"
-          }
+            as: "teamLeader",
+          },
         ],
-        */
       });
       return;
     }
@@ -80,6 +77,71 @@ async function setRoster(tournament, roster, transaction) {
   return tournament;
 }
 
+//  #### Description
+//    Set a placement for all teams based on their points
+//
+//  #### Parameters
+//    * teams: the teams for which to set the placement
+//
+//  #### Returns
+//    * teamPoints: the teams with their placements
+async function setTeamPlacements(teams) {
+  let teamPoints = [];
+
+  for (const team of teams) {
+    teamPoints.push({ team: team, points: await team.points });
+  }
+
+  teamPoints.sort((t1, t2) => {
+    // Ascending order (less points == higher place) - might need review later on
+    // when we have PointsCalculationRules
+    return t1.points > t2.points ? 1 : -1;
+  });
+
+  return teamPoints.map((t) => {
+    if (t.points !== null) t.team.placement = teamPoints.indexOf(t) + 1;
+    return t.team;
+  });
+}
+
+//  #### Description
+//    Sort teams based on the teamOrder parameter
+//
+//  #### Parameters
+//    * tournament: the tournament in which to sort the teams
+//    * teamOrder: the order in which to sort the teams
+//
+//  #### Returns
+//    * tournament: the tournament with its sorted teams
+async function sortTeams(teams, teamOrder) {
+  const order = teamOrder || "PLACEMENT_ASC";
+
+  try {
+    switch (order) {
+      case "PLACEMENT_ASC":
+      case "PLACEMENT_DESC":
+        return teams.sort((t1, t2) => {
+          if (order === "PLACEMENT_ASC")
+            return t1.placement > t2.placement ? 1 : -1;
+          else return t1.placement < t2.placement ? 1 : -1;
+        });
+
+      case "NAME_ASC":
+      case "NAME_DESC":
+        return teams.sort((t1, t2) => {
+          if (order === "NAME_ASC") return t1.name > t2.name ? 1 : -1;
+          else return t1.name < t2.name ? 1 : -1;
+        });
+
+      default:
+        return teams;
+    }
+  } catch (sortTeamsError) {
+    logger.error(sortTeamsError, { logFields: { tournament } });
+    throw sortTeamsError;
+  }
+}
+
 module.exports = {
   Query: {
     //  #### Description
@@ -90,7 +152,7 @@ module.exports = {
     //
     //  #### Returns
     //    * findTournaments: the list of tournaments with matching criteria or all tournaments if the filter is not defined
-    async findTournaments(root, { filter }, { authUser }, info) {
+    async findTournaments(root, { filter, teamOrder }, { authUser }, info) {
       if (!authUser) throw new Error("Unauthorized");
 
       const include = getInclude(info);
@@ -107,7 +169,40 @@ module.exports = {
       logger.debug("Tournament search", { logFields });
 
       try {
-        return await Tournament.findAll({ where, order, include });
+        let tournaments = await Tournament.findAll({ where, order, include });
+
+        let includeTeams = false;
+        include.forEach((inc) => {
+          if (inc.as === "teams") {
+            includeTeams = true;
+            return;
+          }
+        });
+
+        if (includeTeams) {
+          for (let tournament of tournaments) {
+            let teams = await tournament.getTeams({
+              include: [
+                {
+                  model: Player,
+                  as: "players",
+                },
+                {
+                  model: Player,
+                  as: "teamLeader",
+                },
+              ],
+            });
+
+            if (teams.length) {
+              teams = await setTeamPlacements(teams);
+              teams = await sortTeams(teams, teamOrder);
+              tournament.teams = teams;
+            }
+          }
+        }
+
+        return tournaments;
       } catch (findError) {
         if (logFields === null) logFields = {};
         logger.error(findError, { logFields });
@@ -221,7 +316,6 @@ module.exports = {
       // because for some reason the object return by `Tournament.update()`
       // manages the Roster association like an array
       // which means the response would always have a null `roster` field
-      if (typeof tournament.name !== "undefined") result.name = team.name;
       if (typeof tournament.name !== "undefined") result.name = tournament.name;
       if (typeof tournament.startDate !== "undefined")
         result.startDate = tournament.startDate;

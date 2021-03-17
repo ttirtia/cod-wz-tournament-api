@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>tournament.js</title>
+  <title>gameResult.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="../docco.css" />
@@ -128,7 +128,7 @@
         
           <li id="title">
               <div class="annotation">
-                  <h1>tournament.js</h1>
+                  <h1>gameResult.js</h1>
               </div>
           </li>
         
@@ -148,19 +148,14 @@
 <span class="hljs-keyword">const</span> { Model } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
 
 <span class="hljs-built_in">module</span>.exports = <span class="hljs-function">(<span class="hljs-params">sequelize, DataTypes</span>) =&gt;</span> {
-  <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Tournament</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Model</span> </span>{
+  <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">GameResult</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Model</span> </span>{
     <span class="hljs-keyword">static</span> <span class="hljs-function"><span class="hljs-title">associate</span>(<span class="hljs-params">models</span>)</span> {
-      Tournament.belongsTo(models.Roster, {
-        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;roster&quot;</span>,
-      });
+      GameResult.belongsTo(models.Game, { <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;game&quot;</span> });
 
-      Tournament.hasMany(models.Team, {
-        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;teams&quot;</span>,
-        <span class="hljs-attr">foreignKey</span>: <span class="hljs-string">&quot;tournament_id&quot;</span>,
-      });
+      GameResult.belongsTo(models.Player, { <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span> });
     }
   }
-  Tournament.init(
+  GameResult.init(
     {
       <span class="hljs-attr">id</span>: {
         <span class="hljs-attr">type</span>: DataTypes.UUID,
@@ -168,35 +163,18 @@
         <span class="hljs-attr">defaultValue</span>: DataTypes.UUIDV4,
         <span class="hljs-attr">primaryKey</span>: <span class="hljs-literal">true</span>,
       },
-      <span class="hljs-attr">name</span>: {
-        <span class="hljs-attr">type</span>: DataTypes.TEXT,
-        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
-        <span class="hljs-attr">unique</span>: <span class="hljs-literal">true</span>,
-      },
-      <span class="hljs-attr">startDate</span>: {
-        <span class="hljs-attr">type</span>: DataTypes.DATE,
-        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
-      },
-      <span class="hljs-attr">endDate</span>: {
-        <span class="hljs-attr">type</span>: DataTypes.DATE,
-        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
-      },
-      <span class="hljs-attr">gameLimit</span>: {
+      <span class="hljs-attr">kills</span>: {
         <span class="hljs-attr">type</span>: DataTypes.INTEGER,
-        <span class="hljs-attr">defaultValue</span>: -<span class="hljs-number">1</span>,
-      },
-      <span class="hljs-attr">isOpen</span>: {
-        <span class="hljs-attr">type</span>: DataTypes.BOOLEAN,
-        <span class="hljs-attr">defaultValue</span>: <span class="hljs-literal">true</span>,
+        <span class="hljs-attr">allowNull</span>: <span class="hljs-literal">false</span>,
       },
     },
     {
       sequelize,
-      <span class="hljs-attr">modelName</span>: <span class="hljs-string">&quot;Tournament&quot;</span>,
+      <span class="hljs-attr">modelName</span>: <span class="hljs-string">&quot;GameResult&quot;</span>,
     }
   );
 
-  <span class="hljs-keyword">return</span> Tournament;
+  <span class="hljs-keyword">return</span> GameResult;
 };</pre></div></div>
             
         </li>

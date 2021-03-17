@@ -25,6 +25,11 @@
                 </a>
               
                 
+                <a class="source" href="game.html">
+                  graphql/resolvers/game.js
+                </a>
+              
+                
                 <a class="source" href="invitation.html">
                   graphql/resolvers/invitation.js
                 </a>
@@ -62,6 +67,16 @@
                 
                 <a class="source" href="../../logger.html">
                   logger.js
+                </a>
+              
+                
+                <a class="source" href="../../models/game.html">
+                  models/game.js
+                </a>
+              
+                
+                <a class="source" href="../../models/gameResult.html">
+                  models/gameResult.js
                 </a>
               
                 
@@ -221,7 +236,7 @@
     <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Player not found&quot;</span>);
   }
 
-  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">await</span> result.getUser() !== <span class="hljs-literal">null</span>) {
+  <span class="hljs-keyword">if</span> ((<span class="hljs-keyword">await</span> result.getUser()).length) {
     logger.error(<span class="hljs-string">&quot;Player already linked to a user&quot;</span>, { logFields });
     <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Player already linked to a user&quot;</span>);
   }

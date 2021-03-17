@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>roster.js</title>
+  <title>game.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="../../docco.css" />
@@ -128,7 +128,7 @@
         
           <li id="title">
               <div class="annotation">
-                  <h1>roster.js</h1>
+                  <h1>game.js</h1>
               </div>
           </li>
         
@@ -146,7 +146,7 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-meta">&quot;use strict&quot;</span>;
 
 <span class="hljs-keyword">const</span> { Op } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;sequelize&quot;</span>);
-<span class="hljs-keyword">const</span> { Roster, Player, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
+<span class="hljs-keyword">const</span> { Game, Team, Player, GameResult, sequelize } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../models&quot;</span>);
 
 <span class="hljs-keyword">const</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;../../logger&quot;</span>);</pre></div></div>
             
@@ -167,11 +167,21 @@
   <span class="hljs-keyword">let</span> include = [];
 
   info.fieldNodes[<span class="hljs-number">0</span>].selectionSet.selections.forEach(<span class="hljs-function">(<span class="hljs-params">field</span>) =&gt;</span> {
-    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;players&quot;</span>) {
+    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;team&quot;</span>) {
+      include.push({ <span class="hljs-attr">model</span>: Team, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;team&quot;</span> });
+      <span class="hljs-keyword">return</span>;
+    }
+
+    <span class="hljs-keyword">if</span> (field.name.value === <span class="hljs-string">&quot;results&quot;</span>) {
       include.push({
-        <span class="hljs-attr">model</span>: Player,
-        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;players&quot;</span>,
-        <span class="hljs-attr">through</span>: { <span class="hljs-attr">attributes</span>: [] },
+        <span class="hljs-attr">model</span>: GameResult,
+        <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;results&quot;</span>,
+        <span class="hljs-attr">include</span>: [
+          {
+            <span class="hljs-attr">model</span>: Player,
+            <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span>,
+          },
+        ],
       });
       <span class="hljs-keyword">return</span>;
     }
@@ -189,22 +199,47 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-3">&#x00a7;</a>
               </div>
-              <p>Build the query filter based on provided fields</p>
+              <h4 id="description">Description</h4>
+<p>   Build GameResult objects based on mutation input</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>results: raw inputs</li>
+<li>game: the game to link the results to</li>
+<li>transaction: the related database transaction</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>gameResults: array of GameResult objects</li>
+</ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFilter</span>(<span class="hljs-params">filter</span>) </span>{
-  <span class="hljs-keyword">let</span> queryFilter = [];
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">buildGameResults</span>(<span class="hljs-params">results, game, transaction</span>) </span>{
+  <span class="hljs-keyword">let</span> gameResults = [];
 
-  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter.id !== <span class="hljs-string">&quot;undefined&quot;</span>) {
-    queryFilter.push({ <span class="hljs-attr">id</span>: { [Op.eq]: filter.id } });
+  <span class="hljs-keyword">const</span> include = [{ <span class="hljs-attr">model</span>: Player, <span class="hljs-attr">as</span>: <span class="hljs-string">&quot;player&quot;</span> }];
+  <span class="hljs-keyword">const</span> logFields = { results, game, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Game buildGameResults&quot;</span> };
+
+  <span class="hljs-keyword">let</span> gameResult;
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> result <span class="hljs-keyword">of</span> results) {
+      gameResult = <span class="hljs-keyword">await</span> GameResult.create(
+        { <span class="hljs-attr">kills</span>: result.kills },
+        { include }
+      );
+      <span class="hljs-keyword">await</span> <span class="hljs-built_in">Promise</span>.all([
+        gameResult.setGame(game),
+        gameResult.setPlayer(<span class="hljs-keyword">await</span> Player.findByPk(result.player)),
+      ]);
+
+      gameResults.push(gameResult);
+    }
+  } <span class="hljs-keyword">catch</span> (buildGameResultsError) {
+    logger.error(buildGameResultsError, { logFields });
+    <span class="hljs-keyword">throw</span> buildGameResults;
   }
 
-  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter.name !== <span class="hljs-string">&quot;undefined&quot;</span>) {
-    queryFilter.push({ <span class="hljs-attr">name</span>: { [Op.iLike]: <span class="hljs-string">&quot;%&quot;</span> + filter.name + <span class="hljs-string">&quot;%&quot;</span> } });
-  }
-
-  <span class="hljs-keyword">return</span> queryFilter;
+  <span class="hljs-keyword">return</span> gameResults;
 }</pre></div></div>
             
         </li>
@@ -217,42 +252,34 @@
                 <a class="ss" href="#section-4">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Associate players to the roster</p>
+<p>   Associate a team to the game</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>roster: the roster in which to set the players</li>
-<li>players: list of players to set in the roster</li>
+<li>game: the game in which to set the team</li>
+<li>team: the team to link to the game</li>
 <li>transaction: the related database transaction</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>roster: the roster updated with the players</li>
+<li>game: the game updated with its team</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setPlayers</span>(<span class="hljs-params">roster, players, transaction</span>) </span>{
-  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> players === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> roster;
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setTeam</span>(<span class="hljs-params">game, team, transaction</span>) </span>{
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> team === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> game;
 
-  <span class="hljs-keyword">const</span> logFields = { roster, players, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster setPlayers&quot;</span> };
+  <span class="hljs-keyword">const</span> logFields = { game, team, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Game setTeam&quot;</span> };
 
   <span class="hljs-keyword">try</span> {
-    <span class="hljs-keyword">await</span> roster.setPlayers(
-      <span class="hljs-keyword">await</span> Player.findAll({
-        <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: { [Op.in]: players } },
-      }),
-      { transaction }
-    );
-  } <span class="hljs-keyword">catch</span> (setPlayersError) {
-    logger.error(setPlayersError, logFields);
-    <span class="hljs-keyword">throw</span> setPlayersError;
+    <span class="hljs-keyword">await</span> game.setTeam(<span class="hljs-keyword">await</span> Team.findByPk(team), { transaction });
+  } <span class="hljs-keyword">catch</span> (setTeamError) {
+    logger.error(setTeamError, { logFields });
+    <span class="hljs-keyword">throw</span> setTeamError;
   }
 
-  <span class="hljs-keyword">return</span> roster;
-}
-
-<span class="hljs-built_in">module</span>.exports = {
-  <span class="hljs-attr">Query</span>: {</pre></div></div>
+  <span class="hljs-keyword">return</span> game;
+}</pre></div></div>
             
         </li>
         
@@ -264,44 +291,36 @@
                 <a class="ss" href="#section-5">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Find all rosters or some rosters based on filter</p>
+<p>   Associate a player as team leader to the team</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>filter: criteria to use when searching for rosters</li>
+<li>team: the team in which to set the team leader</li>
+<li>player: the player to set as team leader</li>
+<li>transaction: the related database transaction</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>findRosters: the list of rosters with matching criteria or all rosters if the filter is not defined</li>
+<li>team: the team updated with the team leader</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">findRosters</span>(<span class="hljs-params">root, { filter }, { authUser }, info</span>)</span> {
-      <span class="hljs-keyword">if</span> (!authUser) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setResults</span>(<span class="hljs-params">game, results, transaction</span>) </span>{
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> results === <span class="hljs-string">&quot;undefined&quot;</span>) <span class="hljs-keyword">return</span> game;
 
-      <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> order = [[<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;ASC&quot;</span>]];
+  <span class="hljs-keyword">const</span> logFields = { game, results, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Game setResults&quot;</span> };
 
-      <span class="hljs-keyword">let</span> logFields = { <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster search&quot;</span> };
-      <span class="hljs-keyword">let</span> where = <span class="hljs-literal">null</span>;
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> game.setResults(<span class="hljs-keyword">await</span> buildGameResults(results, game, transaction));
+  } <span class="hljs-keyword">catch</span> (setResultsError) {
+    logger.error(setResultsError, { logFields });
+    <span class="hljs-keyword">throw</span> setResultsError;
+  }
 
-      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> filter !== <span class="hljs-string">&quot;undefined&quot;</span>) {
-        where = { [Op.and]: getFilter(filter) };
-        logFields.filter = filter;
-      }
+  <span class="hljs-keyword">return</span> game;
+}
 
-      logger.debug(<span class="hljs-string">&quot;Roster search&quot;</span>, { logFields });
-
-      <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Roster.findAll({ where, order, include });
-      } <span class="hljs-keyword">catch</span> (findError) {
-        <span class="hljs-keyword">if</span> (logFields === <span class="hljs-literal">null</span>) logFields = {};
-        logger.error(findError, { logFields });
-        <span class="hljs-keyword">throw</span> findError;
-      }
-    },
-  },
-
+<span class="hljs-built_in">module</span>.exports = {
   <span class="hljs-attr">Mutation</span>: {</pre></div></div>
             
         </li>
@@ -314,47 +333,21 @@
                 <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Create a new roster</p>
+<p>   Create a new game</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>roster: the roster to create</li>
+<li>game: the game to create</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>createRoster: the newly created roster</li>
+<li>createGame: the newly created game</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">createRoster</span>(<span class="hljs-params">root, { roster }, { authUser }, info</span>)</span> {
-      <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
-
-      <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { roster, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster creation&quot;</span> };
-
-      logger.info(<span class="hljs-string">&quot;Roster creation&quot;</span>, { logFields });
-
-      <span class="hljs-keyword">let</span> result;
-
-      <span class="hljs-keyword">try</span> {
-        result = <span class="hljs-keyword">await</span> Roster.create({ <span class="hljs-attr">name</span>: roster.name }, { include });
-      } <span class="hljs-keyword">catch</span> (createError) {
-        logger.error(createError, { logFields });
-        <span class="hljs-keyword">throw</span> createError;
-      }
-
-      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
-      <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> setPlayers(result, roster.players, transaction);
-      } <span class="hljs-keyword">catch</span> (associationsError) {
-        <span class="hljs-keyword">await</span> transaction.rollback();
-        <span class="hljs-keyword">await</span> Roster.destroy({ <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: result.id } });
-        <span class="hljs-keyword">throw</span> associationsError;
-      }
-
-      <span class="hljs-keyword">await</span> transaction.commit();
-      <span class="hljs-keyword">return</span> result.reload();
-    },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">createGame</span>(<span class="hljs-params">root, { game }, { authUser }, info</span>)</span> {
+      <span class="hljs-keyword">const</span> team = <span class="hljs-keyword">await</span> Team.findByPk(game.team);
+      <span class="hljs-keyword">const</span> teamLeaderUser = <span class="hljs-keyword">await</span> (<span class="hljs-keyword">await</span> team.getTeamLeader()).getUser();</pre></div></div>
             
         </li>
         
@@ -365,32 +358,47 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
-              <h4 id="description">Description</h4>
-<p>   Delete an existing roster</p>
-<h4 id="parameters">Parameters</h4>
-<ul>
-<li>id: id of the roster to delete</li>
-</ul>
-<h4 id="returns">Returns</h4>
-<ul>
-<li>deleteRoster: boolean describing if the operation was successful or not</li>
-</ul>
+              <p>Only let admins and team leaders create game results</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">deleteRoster</span>(<span class="hljs-params">root, { id }, { authUser }, info</span>)</span> {
-      <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (
+        !authUser ||
+        team === <span class="hljs-literal">null</span> ||
+        (teamLeaderUser.length &amp;&amp;
+          teamLeaderUser[<span class="hljs-number">0</span>].id !== authUser.id) ||
+        !authUser.isAdmin
+      )
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
-      <span class="hljs-keyword">const</span> logFields = { id, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster deletion&quot;</span> };
+      <span class="hljs-keyword">const</span> include = getInclude(info);
+      <span class="hljs-keyword">const</span> logFields = { game, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Game creation&quot;</span> };
 
-      logger.info(<span class="hljs-string">&quot;Roster deletion&quot;</span>, { logFields });
+      logger.info(<span class="hljs-string">&quot;Game creation&quot;</span>, { logFields });
+
+      <span class="hljs-keyword">let</span> result;
 
       <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Roster.destroy({ <span class="hljs-attr">where</span>: { id } });
-      } <span class="hljs-keyword">catch</span> (deleteError) {
-        logger.error(deleteError, { logFields });
-        <span class="hljs-keyword">throw</span> deleteError;
+        result = <span class="hljs-keyword">await</span> Game.create({ <span class="hljs-attr">placement</span>: game.placement }, { include });
+      } <span class="hljs-keyword">catch</span> (createError) {
+        logger.error(createError, { logFields });
+        <span class="hljs-keyword">throw</span> createError;
       }
+
+      <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">await</span> <span class="hljs-built_in">Promise</span>.all([
+          setTeam(result, game.team, transaction),
+          setResults(result, game.results, transaction),
+        ]);
+      } <span class="hljs-keyword">catch</span> (associationsError) {
+        <span class="hljs-keyword">await</span> transaction.rollback();
+        <span class="hljs-keyword">await</span> Game.destroy({ <span class="hljs-attr">where</span>: { <span class="hljs-attr">id</span>: result.id } });
+        <span class="hljs-keyword">throw</span> associationsError;
+      }
+
+      <span class="hljs-keyword">await</span> transaction.commit();
+      <span class="hljs-keyword">return</span> result.reload();
     },</pre></div></div>
             
         </li>
@@ -403,33 +411,32 @@
                 <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <h4 id="description">Description</h4>
-<p>   Update an existing roster</p>
+<p>   Delete an existing game</p>
 <h4 id="parameters">Parameters</h4>
 <ul>
-<li>id: the roster id</li>
-<li>roster: object composed of attributes/values to update</li>
+<li>id: id of the game to delete</li>
 </ul>
 <h4 id="returns">Returns</h4>
 <ul>
-<li>updateRoster: the updated roster</li>
+<li>deleteGame: boolean describing if the operation was successful or not</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">updateRoster</span>(<span class="hljs-params">root, { id, roster }, { authUser }, info</span>)</span> {
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">deleteGame</span>(<span class="hljs-params">root, { id }, { authUser }, info</span>)</span> {
       <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
 
-      <span class="hljs-keyword">const</span> include = getInclude(info);
-      <span class="hljs-keyword">const</span> logFields = { id, roster, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Roster update&quot;</span> };
+      <span class="hljs-keyword">const</span> logFields = { id, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Game deletion&quot;</span> };
 
-      <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> Roster.findByPk(id, { include });
+      logger.info(<span class="hljs-string">&quot;Game deletion&quot;</span>, { logFields });
 
-      <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
-        logger.error(<span class="hljs-string">&quot;Roster not found&quot;</span>, { logFields });
-        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Roster not found&quot;</span>);
+      <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> Game.destroy({ <span class="hljs-attr">where</span>: { id } });
+      } <span class="hljs-keyword">catch</span> (deleteError) {
+        logger.error(deleteError, { logFields });
+        <span class="hljs-keyword">throw</span> deleteError;
       }
-
-      logger.info(<span class="hljs-string">&quot;Roster update&quot;</span>, { logFields });</pre></div></div>
+    },</pre></div></div>
             
         </li>
         
@@ -440,14 +447,53 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-9">&#x00a7;</a>
               </div>
-              <p>We need to map this by hand and use the <code>save()</code> function
-because for some reason the object return by <code>Roster.update()</code>
-manages the Player association like an array
-which means the response would always have a null <code>players</code> field</p>
+              <h4 id="description">Description</h4>
+<p>   Update an existing game</p>
+<h4 id="parameters">Parameters</h4>
+<ul>
+<li>id: the game id</li>
+<li>game: object composed of attributes/values to update</li>
+</ul>
+<h4 id="returns">Returns</h4>
+<ul>
+<li>updateGame: the updated game</li>
+</ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> roster.name !== <span class="hljs-string">&quot;undefined&quot;</span>) result.name = roster.name;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-title">updateGame</span>(<span class="hljs-params">root, { id, game }, { authUser }, info</span>)</span> {
+      <span class="hljs-keyword">if</span> (!authUser || !authUser.isAdmin) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Unauthorized&quot;</span>);
+
+      <span class="hljs-keyword">const</span> include = getInclude(info);
+      <span class="hljs-keyword">const</span> logFields = { id, game, <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;Game update&quot;</span> };
+
+      <span class="hljs-keyword">let</span> result = <span class="hljs-keyword">await</span> Game.findByPk(id, { include });
+
+      <span class="hljs-keyword">if</span> (result === <span class="hljs-literal">null</span>) {
+        logger.error(<span class="hljs-string">&quot;Game not found&quot;</span>, { logFields });
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&quot;Game not found&quot;</span>);
+      }
+
+      logger.info(<span class="hljs-string">&quot;Game update&quot;</span>, { logFields });</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-10">&#x00a7;</a>
+              </div>
+              <p>We need to map this by hand and use the <code>save()</code> function
+because for some reason the object return by <code>Game.update()</code>
+manages the GameResult association like an array
+which means the response would always have a null <code>results</code> field</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> game.placement !== <span class="hljs-string">&quot;undefined&quot;</span>)
+        result.placement = team.placement;
 
       <span class="hljs-keyword">const</span> transaction = <span class="hljs-keyword">await</span> sequelize.transaction();
 
@@ -460,7 +506,7 @@ which means the response would always have a null <code>players</code> field</p>
       }
 
       <span class="hljs-keyword">try</span> {
-        <span class="hljs-keyword">await</span> setPlayers(result, roster.players, transaction);
+        <span class="hljs-keyword">await</span> setResults(result, game.results, transaction);
       } <span class="hljs-keyword">catch</span> (associationsError) {
         <span class="hljs-keyword">await</span> transaction.rollback();
         <span class="hljs-keyword">throw</span> associationsError;
@@ -471,11 +517,11 @@ which means the response would always have a null <code>players</code> field</p>
         </li>
         
         
-        <li id="section-10">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-10">&#x00a7;</a>
+                <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
               <p><code>.reload()</code> is needed otherwise the instance would not be up-to-date</p>
 
