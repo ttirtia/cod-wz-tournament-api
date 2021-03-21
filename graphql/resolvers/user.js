@@ -208,6 +208,29 @@ module.exports = {
     },
 
     //  #### Description
+    //    Delete an existing user
+    //
+    //  #### Parameters
+    //    * id: id of the user to delete
+    //
+    //  #### Returns
+    //    * deleteUser: boolean describing if the operation was successful or not
+    async deleteUser(root, { id }, { authUser }, info) {
+      if (!authUser || !authUser.isAdmin) throw new Error("Unauthorized");
+
+      const logFields = { id, type: "User deletion" };
+
+      logger.info("User deletion", { logFields });
+
+      try {
+        return await User.destroy({ where: { id } });
+      } catch (deleteError) {
+        logger.error(deleteError, { logFields });
+        throw deleteError;
+      }
+    },
+
+    //  #### Description
     //    Update an existing user
     //
     //  #### Parameters
