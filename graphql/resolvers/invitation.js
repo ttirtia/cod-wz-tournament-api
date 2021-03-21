@@ -123,8 +123,8 @@ module.exports = {
 
       let result;
       let validUntilDate = new Date();
-      validUntilDate.setHours(
-        validUntilDate.getHours() + INVITATION_VALID_HOURS
+      validUntilDate.setTime(
+        validUntilDate.getTime() + (INVITATION_VALID_HOURS * 60 * 60 * 1000)
       );
 
       try {
