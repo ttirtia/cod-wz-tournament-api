@@ -1,7 +1,14 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Game, Team, Player, GameResult, sequelize } = require("../../models");
+const {
+  Game,
+  Team,
+  Player,
+  GameResult,
+  Tournament,
+  sequelize,
+} = require("../../models");
 
 const logger = require("../../logger");
 
@@ -132,17 +139,27 @@ module.exports = {
     //  #### Returns
     //    * createGame: the newly created game
     async createGame(root, { game }, { authUser }, info) {
-      const team = await Team.findByPk(game.team);
+      const team = await Team.findByPk(game.team, {
+        include: [{ model: Tournament, as: "tournament" }],
+      });
       const teamLeaderUser = await (await team.getTeamLeader()).getUser();
 
       // Only let admins and team leaders create game results
       if (
         !authUser ||
         team === null ||
-        (teamLeaderUser.length && teamLeaderUser[0].id !== authUser.id) ||
-        !authUser.isAdmin
+        (teamLeaderUser.length &&
+          teamLeaderUser[0].id !== authUser.id &&
+          !authUser.isAdmin)
       )
         throw new Error("Unauthorized");
+
+      if (
+        (await team.getTournament()).gameLimit !== -1 &&
+        (await team.getGames()).length ===
+          (await team.getTournament()).gameLimit
+      )
+        throw new Error("Game limit is already reached");
 
       const include = getInclude(info);
       const logFields = { game, type: "Game creation" };
