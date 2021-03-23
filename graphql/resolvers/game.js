@@ -243,7 +243,7 @@ module.exports = {
       // manages the GameResult association like an array
       // which means the response would always have a null `results` field
       if (typeof game.placement !== "undefined")
-        result.placement = team.placement;
+        result.placement = game.placement;
 
       const transaction = await sequelize.transaction();
 

@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { Team, Player, Tournament, Game, sequelize } = require("../../models");
+const { Team, Player, Tournament, Game, GameResult, sequelize } = require("../../models");
 
 const logger = require("../../logger");
 
@@ -30,7 +30,22 @@ function getInclude(info) {
     }
 
     if (field.name.value === "games") {
-      include.push({ model: Game, as: "games" });
+      include.push({
+        model: Game,
+        as: "games",
+        include: [
+          {
+            model: GameResult,
+            as: "results",
+            include: [
+              {
+                model: Player,
+                as: "player",
+              },
+            ],
+          },
+        ],
+      });
       return;
     }
   });
