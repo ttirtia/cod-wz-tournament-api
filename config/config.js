@@ -12,7 +12,7 @@ module.exports = {
       underscored: true,
     },
   },
-  prod: {
+  production: {
     username: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
