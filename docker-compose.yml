@@ -15,7 +15,7 @@ services:
     networks:
       - "cod-wz-tournament-api"
 
-  app:
+  api:
     build: .
     container_name: cod-wz-tournament-application
     ports:

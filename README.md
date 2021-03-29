@@ -20,7 +20,7 @@ The API server will then be started on port `$SERVER_PORT` (**8888** by default)
 2. Create an admin user
 
 ```bash
-docker-compose exec app node utils/js/create_admin.js
+docker-compose exec api node utils/js/create_admin.js
 ```
 
 ## Local setup
