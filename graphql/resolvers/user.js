@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { User, Player, Invitation, sequelize } = require("../../models");
+const { User, Player, Invitation, sequelize, Team, Tournament, Game, GameResult } = require("../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -15,7 +15,42 @@ function getInclude(info) {
 
   info.fieldNodes[0].selectionSet.selections.forEach((field) => {
     if (field.name.value === "player") {
-      include.push({ model: Player, as: "player" });
+      include.push({
+        model: Player,
+        as: "player",
+        include: [
+          {
+            model: Team,
+            as: "teams",
+            include: [
+              {
+                model: Player,
+                as: "players",
+              },
+              {
+                model: Player,
+                as: "teamLeader",
+              },
+              {
+                model: Tournament,
+                as: "tournament",
+              },
+            {
+              model: Game,
+              as: "games",
+              include: [{
+                model: GameResult,
+                as: "results",
+                include: [{
+                  model: Player,
+                  as: "player"
+                }]
+              }]
+            }
+            ],
+          },
+        ],
+      });
       return;
     }
   });
