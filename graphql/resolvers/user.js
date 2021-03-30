@@ -1,7 +1,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { User, Player, Invitation, sequelize, Team, Tournament, Game, GameResult } = require("../../models");
+const { User, Player, Invitation, Team, Tournament, Game, GameResult, sequelize } = require("../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
