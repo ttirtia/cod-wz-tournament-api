@@ -27,7 +27,23 @@ function getInclude(info) {
           {
             model: Player,
             as: "teamLeader",
-          }
+          },
+          {
+            model: Game,
+            as: "games",
+            include: [
+              {
+                model: GameResult,
+                as: "results",
+                include: [
+                  {
+                    model: Player,
+                    as: "player"
+                  }
+                ],
+              },
+            ],
+          },
         ],
       });
       return;
@@ -190,7 +206,23 @@ module.exports = {
                 {
                   model: Player,
                   as: "teamLeader",
-                }
+                },
+                {
+                  model: Game,
+                  as: "games",
+                  include: [
+                    {
+                      model: GameResult,
+                      as: "results",
+                      include: [
+                        {
+                          model: Player,
+                          as: "player"
+                        }
+                      ],
+                    },
+                  ],
+                },
               ],
             });
 
