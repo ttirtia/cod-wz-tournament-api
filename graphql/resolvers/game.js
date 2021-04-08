@@ -142,15 +142,20 @@ module.exports = {
       const team = await Team.findByPk(game.team, {
         include: [{ model: Tournament, as: "tournament" }],
       });
-      const teamLeaderUser = await (await team.getTeamLeader()).getUser();
+
+      const teamLeader = await team.getTeamLeader();
+      const teamLeaderUser = teamLeader ? await teamLeader.getUser() : null;
 
       // Only let admins and team leaders create game results
       if (
         !authUser ||
         team === null ||
-        (teamLeaderUser.length &&
+        (
+          teamLeaderUser &&
+          teamLeaderUser.length &&
           teamLeaderUser[0].id !== authUser.id &&
-          !authUser.isAdmin)
+          !authUser.isAdmin
+        )
       )
         throw new Error("Unauthorized");
 
