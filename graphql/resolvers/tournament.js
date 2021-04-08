@@ -169,8 +169,6 @@ module.exports = {
     //  #### Returns
     //    * findTournaments: the list of tournaments with matching criteria or all tournaments if the filter is not defined
     async findTournaments(root, { filter, teamOrder }, { authUser }, info) {
-      if (!authUser) throw new Error("Unauthorized");
-
       const include = getInclude(info);
       const order = [["name", "ASC"]];
 
