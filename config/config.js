@@ -22,5 +22,6 @@ module.exports = {
     define: {
       underscored: true,
     },
+    logging: false,
   },
 };
