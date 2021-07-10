@@ -2,8 +2,9 @@ version: '3.8'
 
 services:
   db:
-    image: docker.io/postgres:13.2
+    image: docker.io/postgres:13.3
     container_name: cod-wz-tournament-database
+    restart: unless-stopped
     ports:
       - "${PGPORT:-5432}:5432"
     expose:
@@ -18,6 +19,7 @@ services:
   api:
     build: .
     container_name: cod-wz-tournament-application
+    restart: unless-stopped
     ports:
       - "${SERVER_PORT:-8888}:${SERVER_PORT:-8888}"
     environment:
